@@ -98,6 +98,8 @@ int port = 10;
 
 boolean Z80 = false;//Z80 emulation
 
+const uint8_t BS_KEY=0xFF;
+
 int str2hex(String s)
 {
   int x = 0;
@@ -343,8 +345,17 @@ void loop() {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();
-        KbdBuffer[KbdPtr] = inChar;
-        KbdPtr++;
+        if (uint8_t(inChar)==BS_KEY) {
+          //backspace
+          if (KbdPtr>0) {
+            KbdPtr--;
+            KbdBuffer[KbdPtr] = '\0'; 
+          }
+        }
+        else {
+          KbdBuffer[KbdPtr] = inChar;
+          KbdPtr++;
+        }
         Serial.write(inChar);
       }
     } while ((inChar != '\r') && (inChar != '\n') && (KbdPtr < KbdBufferSize));

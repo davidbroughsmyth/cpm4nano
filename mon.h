@@ -7,7 +7,7 @@
 //TO DO
 //command length check
     
-    //L - load byte to memory
+    //LXXXXYY - load byte to memory
     if (KbdBuffer[0]=='L') {
       adr = kbd2word(1);
       dat = kbd2byte(5);
@@ -16,7 +16,7 @@
       goto MON_END;
     }
 
-    //D - dump byte from memory
+    //DXXXX - dump byte from memory
     if (KbdBuffer[0]=='D') {
         adr = kbd2word(1);
         dat = _getMEM(adr);

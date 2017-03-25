@@ -1603,8 +1603,8 @@ void pc2sp() {
     switch (pa) {
       case 0:
         //port 0
-        //bit 1 - ready to out
-        //bit 5 - ready to in
+        //bit 1 - ready to out (Altair)
+        //bit 5 - ready to in (Altair)
         d8 = 0x02;
         if (Serial.available() > 0) {
           d8 = d8 | 0x20;
@@ -1620,10 +1620,10 @@ void pc2sp() {
           }
         } while (!flag);
         break;
-      case 2:
-        //port 3
+      /*case 2:
+        //port 1
         
-        break;
+        break;*/
     }
     _Regs[_Reg_A] = d8;
     _PC++;
@@ -1637,19 +1637,18 @@ void pc2sp() {
     pa = _getMEM(_PC);
     d8 = _Regs[_Reg_A];
     switch (pa) {
-      case 0:
+      /*case 0:
         //port 0
-        
-        break;
+        break;*/
       case 1:
         //port 1
-        //output to console
+        //output to console (Altair)
         Serial.write(d8);
         break;
-      case 2:
+      /*case 2:
         //port 2
         
-        break;
+        break;*/
     }
     _PC++;
   }
