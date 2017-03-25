@@ -152,7 +152,9 @@
     if (KbdBuffer[0]=='B') {  
     uint16_t len;
     uint16_t count;
-    Serial.println(F("Ready to read the text file..."));  
+    uint8_t crc;
+    uint8_t crc_tst;
+    Serial.println(F("Ready to read the binary file..."));  
     _EOF = false;
     adr = 0x100;
     while (Serial.available() == 0) {
@@ -178,18 +180,29 @@
           //EOF
           _EOF = true;
         }
-        else {
-          //Serial.write(dat);
-        }
         Serial.write(0x06);//ACK send
       }
-     } while (!_EOF);   
+     } while (!_EOF);        
+     //crc receive
+     while (Serial.available() == 0) {
+     }
+     inChar = Serial.read();    
+     crc=uint8_t(inChar);
+     //crc calculation
+     crc_tst=0;
+     for(adr=0x100;adr<(adr+len);adr++) {
+      crc_tst=crc_tst+_getMEM(adr);
+     }
      Serial.println("");
-     Serial.print(adr-0x100, DEC);
-     Serial.println(F(" byte(s) were successfully received"));  
+     if (crc==crc_tst) {
+      Serial.print(adr-0x100, DEC);
+      Serial.println(F(" byte(s) were successfully received")); 
+     }
+     else {
+      Serial.println(F("CRC Error"));
+     } 
      goto MON_END;
-    } 
-
+    }
 
     //M - Debug Mode on/off
     if (KbdBuffer[0]=='M') {
