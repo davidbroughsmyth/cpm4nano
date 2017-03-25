@@ -25,30 +25,24 @@
         goto MON_END;
     }
 
-    //F - load file to memory
-    /*
+    //F - load Intel HEX file to memory
     if (KbdBuffer[0]=='F') {  
-    Serial.println(F("Ready to read the file"));  
+    Serial.println(F("Ready to receive the HEX file..."));  
     error = false;
     _EOF = false;
     hex_crc = 0;
     hex_count = 0;
     hex_bytes = 0;
     hex_type = 0;
-     do {
+    do {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();       
-        //XOFF/XON TRANSMIT
-        Serial.write(0x13); // xoff
         switch (hex_count) {
           case 0://:
               // : waiting
               if (inChar!=':') {
-                Serial.write(0x11); // Xon
-                Serial.write(inChar);//echo
                 break;//next char
-                //error = true;
               }
               else {
                 hex_count++; 
@@ -101,34 +95,70 @@
                 hex_crc++;
                 if (hex_crc != dat) {
                   error = true;
+                  Serial.println("");
                   Serial.println(F("CRC error!"));
+                  break;
                 }
                 else {
                   if (hex_type == 1) {
-                    Serial.write(0x11);
-                    Serial.write(inChar);
                     _EOF = true;
+                    break;
                   }
                   else {
                     hex_count=0;//next line
                     hex_crc = 0;
-                    Serial.write(0x11);
-                    Serial.write(inChar);
                     break;
                   }
                 }
               }
-              */
+              if (hex_count == (hex_len*2 + 9)) {
+                dat = chr2hex(inChar);
+                hex_count++;
+                break;
+              }
+              if (hex_count < (hex_len*2 + 9)) {
+                  if (hex_type == 0) {                  
+                    if ((hex_count %2) != 0) {
+                      dat = chr2hex(inChar);
+                    }
+                    else {
+                      dat = chr2hex(inChar) + dat*16;
+                      _setMEM(adr, dat);
+                      hex_bytes++;            
+                      adr++;        
+                      hex_crc = hex_crc + dat;
+                    }
+                    hex_count++; 
+                  }
+                  else {
+                    error = true;
+                    Serial.println(F("Type error"));
+                  }
+                  break;   
+              }
+          }
+          Serial.write(0x06);//ACK
+      }
+    } while ((!_EOF) && (!error));
+    if (!error) {
+      Serial.println("");
+      Serial.print(hex_bytes, DEC);
+      Serial.println(F(" byte(s) were successfully received"));  
+    }
+    } 
+           
 
-    //T - load text file to memory
+    //TXXXX - load text file to memory (0x1A - EOF)
     if (KbdBuffer[0]=='T') {  
-    Serial.println(F("Ready to read the text file..."));  
+    Serial.println(F("Ready to receive the text file..."));  
     _EOF = false;
-    adr = 0x100;
+    adr = kbd2word(1);
+    count=0;
      do {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();       
+        count++;
         dat = uint8_t(inChar);
         _setMEM(adr, dat);
         adr++;
@@ -136,27 +166,23 @@
           //EOF
           _EOF = true;
         }
-        else {
-          Serial.write(dat);
-        }
         Serial.write(0x06);//ACK send
       }
      } while (!_EOF);   
      Serial.println("");
-     Serial.print(adr-0x100, DEC);
+     Serial.print(count, DEC);
      Serial.println(F(" byte(s) were successfully received"));  
      goto MON_END;
     } 
 
-    //B - load binary file to memory
+    //BXXXX - load binary file to memory
     if (KbdBuffer[0]=='B') {  
-    uint16_t len;
-    uint16_t count;
-    uint8_t crc;
-    uint8_t crc_tst;
-    Serial.println(F("Ready to read the binary file..."));  
+    adr = kbd2word(1);
+    tmp_word = adr;
+    Serial.println(F("Ready to receive the binary file..."));
+    Serial.print(F("Address: "));
+    Serial.print(adr, HEX);  
     _EOF = false;
-    adr = 0x100;
     while (Serial.available() == 0) {
     }
     inChar = Serial.read();    
@@ -165,8 +191,6 @@
     }
     inChar = Serial.read();    
     len=uint8_t(inChar)*256+len; 
-    //Serial.print(F("Length: ")); 
-    //Serial.println(len, DEC); 
     count=0;
     do {
       inChar = '\0';
@@ -189,13 +213,15 @@
      inChar = Serial.read();    
      crc=uint8_t(inChar);
      //crc calculation
-     crc_tst=0;
-     for(adr=0x100;adr<(adr+len);adr++) {
-      crc_tst=crc_tst+_getMEM(adr);
+     tmp_byte=0;
+     adr=tmp_word;
+     for(count=0;count<len;count++) {
+      tmp_byte=tmp_byte+_getMEM(adr);
+      adr++;
      }
      Serial.println("");
-     if (crc==crc_tst) {
-      Serial.print(adr-0x100, DEC);
+     if (crc==tmp_byte) {
+      Serial.print(len, DEC);
       Serial.println(F(" byte(s) were successfully received")); 
      }
      else {
@@ -216,7 +242,7 @@
      goto MON_END;
     }
 
-    //Q - set breakpoint
+    //QXXXX - set breakpoint
     if (KbdBuffer[0]=='Q') {
       byte res;
       adr = kbd2word(1);
@@ -245,7 +271,7 @@
      goto MON_END;
     }
 
-    //G - run
+    //GXXXX - run
     if (KbdBuffer[0]=='G') {
       adr = kbd2word(1);
       clrarea();

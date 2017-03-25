@@ -332,6 +332,11 @@ void loop() {
   uint8_t hex_type;
   uint8_t hex_crc;
   uint8_t hex_bytes;
+  uint16_t len;
+  uint16_t count;
+  uint8_t crc;
+  uint8_t tmp_byte;
+  uint16_t tmp_word;
   while (true) {
     do
     {

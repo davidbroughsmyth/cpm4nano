@@ -1596,17 +1596,29 @@ void pc2sp() {
   void _I8080_IN() {
     uint8_t d8;
     uint8_t pa;
+    bool flag = false;
     _PC++;
     pa = _getMEM(_PC);
     d8 = 0x00;
     switch (pa) {
       case 0:
         //port 0
-        
+        //bit 1 - ready to out
+        //bit 5 - ready to in
+        d8 = 0x02;
+        if (Serial.available() > 0) {
+          d8 = d8 | 0x20;
+        }
         break;
       case 1:
         //port 1
-        
+        //input from console
+        do {
+        if (Serial.available() > 0) {
+            d8 = Serial.read();
+            flag = true;
+          }
+        } while (!flag);
         break;
       case 2:
         //port 3
@@ -1631,7 +1643,8 @@ void pc2sp() {
         break;
       case 1:
         //port 1
-        
+        //output to console
+        Serial.write(d8);
         break;
       case 2:
         //port 2
