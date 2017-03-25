@@ -151,12 +151,32 @@ uint8_t writeSD (uint32_t blk) {
   return res;
 }
 
+//keyboard monitor procedures
+boolean hexcheck(uint8_t start, uint8_t len) {
+  uint8_t i;
+  boolean ok;
+  ok = true;
+  for(i=start;i<(start+len);i++) {
+    if (!(((KbdBuffer[i]>='0') && (KbdBuffer[i]<='9')) || ((KbdBuffer[i]>='A') && (KbdBuffer[i]<='F')))) {
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 uint8_t kbd2byte(uint8_t start) {
   return chr2hex(KbdBuffer[start])*16+chr2hex(KbdBuffer[start+1]);
 }
 
 uint16_t kbd2word(uint8_t start) {
   return (uint16_t)(chr2hex(KbdBuffer[start])*16*16*16) + (uint16_t)(chr2hex(KbdBuffer[start+1])*16*16) + (uint16_t)(chr2hex(KbdBuffer[start+2])*16) + (uint16_t)(chr2hex(KbdBuffer[start+3]));
+}
+
+char upCase(char symbol) {
+  if (symbol >= 97 && symbol <= 122) {
+        symbol = char(uint8_t(symbol) - 32);
+  }
+  return symbol;
 }
 
 #include "MEM.h"
@@ -345,6 +365,7 @@ void loop() {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();
+        inChar = upCase(inChar);
         if (uint8_t(inChar)==BS_KEY) {
           //backspace
           if (KbdPtr>0) {

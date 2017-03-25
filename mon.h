@@ -9,20 +9,30 @@
     
     //LXXXXYY - load byte to memory
     if (KbdBuffer[0]=='L') {
-      adr = kbd2word(1);
-      dat = kbd2byte(5);
-      _setMEM(adr,dat);
-      Serial.println("O.K.");
-      goto MON_END;
+      if (hexcheck(1,6)) {
+        adr = kbd2word(1);
+        dat = kbd2byte(5);
+        _setMEM(adr,dat);
+        Serial.println("O.K.");
+        goto MON_END;
+      }
+      else {
+        goto MON_INVALID;
+      }
     }
 
     //DXXXX - dump byte from memory
     if (KbdBuffer[0]=='D') {
-        adr = kbd2word(1);
-        dat = _getMEM(adr);
-        Serial.println(dat, HEX);
-        Serial.println(F("O.K."));
-        goto MON_END;
+        if (hexcheck(1,4)) {
+          adr = kbd2word(1);
+          dat = _getMEM(adr);
+          Serial.println(dat, HEX);
+          Serial.println(F("O.K."));
+          goto MON_END;
+        }
+        else {
+          goto MON_INVALID;
+      }
     }
 
     //F - load Intel HEX file to memory
@@ -150,6 +160,7 @@
 
     //TXXXX - load text file to memory (0x1A - EOF)
     if (KbdBuffer[0]=='T') {  
+    if (hexcheck(1,4)) {
     Serial.println(F("Ready to receive the text file..."));  
     _EOF = false;
     adr = kbd2word(1);
@@ -173,10 +184,15 @@
      Serial.print(count, DEC);
      Serial.println(F(" byte(s) were successfully received"));  
      goto MON_END;
+     }
+        else {
+          goto MON_INVALID;
+      }
     } 
 
     //BXXXX - load binary file to memory
     if (KbdBuffer[0]=='B') {  
+    if (hexcheck(1,4)) {
     adr = kbd2word(1);
     tmp_word = adr;
     Serial.println(F("Ready to receive the binary file..."));
@@ -228,6 +244,10 @@
       Serial.println(F("CRC Error"));
      } 
      goto MON_END;
+     }
+        else {
+          goto MON_INVALID;
+      }
     }
 
     //M - Debug Mode on/off
@@ -244,6 +264,7 @@
 
     //QXXXX - set breakpoint
     if (KbdBuffer[0]=='Q') {
+      if (hexcheck(1,4)) {
       byte res;
       adr = kbd2word(1);
       if (breakpoint == adr) {
@@ -257,6 +278,10 @@
         Serial.println(breakpoint, HEX); 
       }
       goto MON_END;
+      }
+        else {
+          goto MON_INVALID;
+      }
     }
 
     //Z - Z80 Emulation On/Off
@@ -273,11 +298,16 @@
 
     //GXXXX - run
     if (KbdBuffer[0]=='G') {
+      if (hexcheck(1,4)) {
       adr = kbd2word(1);
       clrarea();
       call(adr);
       Serial.println(F("O.K."));
       goto MON_END;
+      }
+        else {
+          goto MON_INVALID;
+      }
     }    
 
     //disk operations
@@ -352,6 +382,8 @@
       goto MON_END;
     }
 
+MON_INVALID:
+  Serial.println("???");//invalid command
 MON_END:
 
 
