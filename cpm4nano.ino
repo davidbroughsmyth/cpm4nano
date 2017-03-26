@@ -35,6 +35,8 @@
 //#include <EEPROM.h>
 //#include "CPM_BIN.h"
 #//include "TEST.h"
+#include "CPM_def.h"
+
 
 const static uint8_t PROGMEM parity_table[] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
@@ -95,6 +97,27 @@ int KbdPtr = 0;
 int port = 10;
 
 boolean Z80 = false;//Z80 emulation
+
+//FDD emulation
+//FDD controller registers
+const uint8_t FDD_BASE = 0xE0;//FDD base address
+const uint8_t FDD_PORT_0 = FDD_BASE+0;//status/command register (r/w)
+const uint8_t FDD_PORT_1 = FDD_BASE+1;//track
+const uint8_t FDD_PORT_2 = FDD_BASE+2;//sector
+const uint8_t FDD_PORT_3 = FDD_BASE+3;//drive select
+//DMA controller registers
+const uint8_t FDD_DMA_ADDR_LO = FDD_BASE+4;//DMA address low byte
+const uint8_t FDD_DMA_ADDR_HI = FDD_BASE+5;//DMA address high byte
+const uint8_t FDD_DMA_SIZE_LO = FDD_BASE+6;//DMA block size low byte
+const uint8_t FDD_DMA_SIZE_HI = FDD_BASE+7;//DMA block size high byte
+const uint8_t FDD_DMA_MODE = FDD_BASE+8;//DMA mode
+const uint8_t FDD_RD_CMD = 0x00; //read sector command
+const uint8_t FDD_WRT_CMD = 0x01; //write sector command
+const uint8_t FDD_DMA_RD = 0x00; //DMA read 
+const uint8_t FDD_DMA_WRT = 0x01; //DMA write
+static uint16_t DMA_ADDRESS;//DMA address register
+static uint16_t DMA_SIZE;//DMA block size register
+static boolean DMA_MODE;//DMA mode register  false - read to memory; true - write to memory
 
 //-----------------------------------------------------
 //SD read/write
@@ -192,7 +215,6 @@ char upCase(char symbol) {
 
 #include "MEM.h"
 #include "i8080_exec.h"
-#include "CPM_def.h"
 #include "ESC.h"
 #include "BIOS.h"
 
@@ -374,7 +396,7 @@ void loop() {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();
-        Serial.print(uint8_t(inChar),HEX);
+        //Serial.print(uint8_t(inChar),HEX);
         inChar = upCase(inChar);
         if (uint8_t(inChar)==BS_KEY) {
           //backspace

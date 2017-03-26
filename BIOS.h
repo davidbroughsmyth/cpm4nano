@@ -7,6 +7,9 @@
 //TO DO
 //4 fdd
 
+
+
+
 //I/O devices flag
 bool CON_IN = 0; //serial console
 bool CON_OUT = 0; //serial console

@@ -1620,10 +1620,23 @@ void pc2sp() {
           }
         } while (!flag);
         break;
-      /*case 2:
-        //port 1
+      //FDD ports
+      case FDD_PORT_0:
+        //status
         
-        break;*/
+        break;
+      case FDD_PORT_1:
+        //track
+        d8 = _getMEM(_TRACK);
+        break;
+      case FDD_PORT_2:
+        //sector
+        d8 = _getMEM(_SECTOR);
+        break;
+      case FDD_PORT_3:
+        //data
+        
+        break;
     }
     _Regs[_Reg_A] = d8;
     _PC++;
@@ -1645,10 +1658,28 @@ void pc2sp() {
         //output to console (Altair)
         Serial.write(d8);
         break;
-      /*case 2:
-        //port 2
+      //FDD ports
+      case FDD_PORT_0:
+        //command
+        if (d8 == FDD_RD_CMD) {
+         
+        }
+        if (d8 == FDD_WRT_CMD) {
+         
+        }
+        break;
+      case FDD_PORT_1:
+        //track
+        _setMEM(_TRACK, d8);
+        break;
+      case FDD_PORT_2:
+        //sector
+        _setMEM(_SECTOR, d8);
+        break;
+      case FDD_PORT_3:
+        //data
         
-        break;*/
+        break;
     }
     _PC++;
   }
