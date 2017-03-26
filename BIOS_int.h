@@ -19,7 +19,7 @@
       }
   }
 
-  if ((_PC>=_BIOS_LO) && (_PC<_BIOS_HI)) {
+  if ((_PC>=_BIOS_LO) && (_PC<_BIOS_HI) && BIOS_INT) {
     if (DEBUG) 
     {
     color(4);

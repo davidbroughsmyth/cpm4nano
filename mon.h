@@ -373,12 +373,12 @@
 
     //C - load CP/M
     if (KbdBuffer[0]=='C') {
-      //CPM
-      DEBUG = false; 
-      clrscr();
+      DEBUG = false;//debug off 
+      clrscr();//clear screen
       while (!_IPL()) {};//initial loader
+      BIOS_INT = true;//BIOS intercept enabled
       call(_BIOS);//JMP TO BIOS
-      DEBUG = true;
+      DEBUG = true;//debug on
       goto MON_END;
     }
 

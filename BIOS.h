@@ -5,11 +5,11 @@
 */
 
 //TO DO
-//четыре диска
+//4 fdd
 
-//флаги устройств ввода-вывода
-bool CON_IN = 0; //PUTTY
-bool CON_OUT = 0; //PUTTY
+//I/O devices flag
+bool CON_IN = 0; //serial console
+bool CON_OUT = 0; //serial console
 
 const uint8_t ACK = 0x06;
 

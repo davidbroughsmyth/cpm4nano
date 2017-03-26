@@ -5,7 +5,7 @@
 */
 
 //TO DO
-//позиции на экране
+//screen position check
 
 #define CTRL_C 3
 

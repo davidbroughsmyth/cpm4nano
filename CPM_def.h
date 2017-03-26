@@ -5,7 +5,7 @@
 */
 
 //TO DO
-//проверить для четырех дисков
+//check for 4 fdd
 
 const uint32_t SD_MEM_SIZE  =   65536;
 const uint32_t SD_FDD_A_OFFSET = 0x0001000; 
@@ -87,6 +87,8 @@ const uint16_t LOGINBYTE = 4;
 const uint16_t JMP_BDOS = 5; //BDOS start jmp 0x3c06
 
 #define SEC_BUF 0x80 //sector buffer
+
+boolean BIOS_INT = false;//BIOS Intercept flag
 
 /*
 0000 ... 00FF  -  RAM
