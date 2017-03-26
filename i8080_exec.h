@@ -102,23 +102,27 @@ uint8_t in_port(uint8_t port) {
         } while (!readyFlag);
         break;
       //FDD ports
-      case FDD_PORT_0:
+      case FDD_PORT_CMD:
         //status
-        
+        if (_FDD_STATUS) {
+          dat = 1;
+        }
+        else {
+          dat = 0;
+        }
         break;
-      case FDD_PORT_1:
+      case FDD_PORT_TRK:
         //track
-        dat = _getMEM(_TRACK);
+        dat = _getMEM(_FDD_TRACK);
         break;
-      case FDD_PORT_2:
+      case FDD_PORT_SEC:
         //sector
-        dat = _getMEM(_SECTOR);
+        dat = _getMEM(_FDD_SECTOR);
         break;
-      case FDD_PORT_3:
-        //data
-        
+      case FDD_PORT_DRV:
+        //drive select
+        dat = _getMEM(_DISKNO);
         break;
-
       case IN_PORT:
         dat = digitalRead(IN_pin);
         if ((dat && 0x01)==0x01) {
@@ -134,6 +138,9 @@ uint8_t in_port(uint8_t port) {
 
 
 void out_port(uint8_t port, uint8_t dat) {
+  uint16_t i;
+  uint8_t res;
+  uint32_t blk;
   switch (port) {
       /*case 0:
         //port 0
@@ -144,28 +151,91 @@ void out_port(uint8_t port, uint8_t dat) {
         Serial.write(dat);
         break;
       //FDD ports
-      case FDD_PORT_0:
+      case FDD_PORT_CMD:
         //command
         if (dat == FDD_RD_CMD) {
-         
+          //sector read
+          blk = _getMEM(_FDD_SECTOR)-1;
+          blk = blk + _getMEM(_FDD_TRACK)*TRACK_SIZE; 
+          switch (_getMEM(_DISKNO)) {
+            case 0:
+              blk = blk +  SD_FDD_A_OFFSET;
+            break;
+            case 1:
+              blk = blk +  SD_FDD_B_OFFSET;
+            break;
+            case 2:
+              blk = blk +  SD_FDD_C_OFFSET;
+            break;
+            case 3:
+              blk = blk +  SD_FDD_D_OFFSET;
+            break;
+          }
+          res = readSD(blk, 0);
+          if (res==1) {
+            for (i = 0 ; i < SD_BLK_SIZE ; i++) {
+              _dsk_buffer[i] = _buffer[i];           
+            }
+            for(i=0;i<SD_BLK_SIZE;i++) {
+              _setMEM(_getMEM(_FDD_DMA_ADDRESS)+_getMEM(_FDD_DMA_ADDRESS+1)*256+i,_dsk_buffer[i]); 
+            }
+            _FDD_STATUS=true;
+          }
+          else {
+            _FDD_STATUS=false;
+          }
         }
         if (dat == FDD_WRT_CMD) {
-         
+          //sector write
+          blk = _getMEM(_FDD_SECTOR)-1;
+          blk = blk + _getMEM(_FDD_TRACK)*TRACK_SIZE; 
+          switch (_getMEM(_DISKNO)) {
+            case 0:
+              blk = blk +  SD_FDD_A_OFFSET;
+            break;
+            case 1:
+              blk = blk +  SD_FDD_B_OFFSET;
+            break;
+            case 2:
+              blk = blk +  SD_FDD_C_OFFSET;
+            break;
+            case 3:
+              blk = blk +  SD_FDD_D_OFFSET;
+            break;
+          } 
+          for (i = 0 ; i < SD_BLK_SIZE ; i++) {
+            _dsk_buffer[i] = _getMEM(_getMEM(_FDD_DMA_ADDRESS)+_getMEM(_FDD_DMA_ADDRESS+1)*256+i);
+          }
+          for(i=0;i<SD_BLK_SIZE;i++) {
+            _buffer[i] = _dsk_buffer[i]; 
+          }
+          res = writeSD(blk);
+          if (res==1) {
+            _FDD_STATUS=true;
+          }
+          else {
+            _FDD_STATUS=false;
+          }
         }
         break;
-      case FDD_PORT_1:
+      case FDD_PORT_TRK:
         //track
-        _setMEM(_TRACK, dat);
+        _setMEM(_FDD_TRACK, dat);
         break;
-      case FDD_PORT_2:
+      case FDD_PORT_SEC:
         //sector
-        _setMEM(_SECTOR, dat);
+        _setMEM(_FDD_SECTOR, dat);
         break;
-      case FDD_PORT_3:
-        //data
-        
+      case FDD_PORT_DRV:
+        //drive select
+        _setMEM(_DISKNO, dat);
         break;
-
+      case FDD_DMA_ADDR_LO:
+        _setMEM(_FDD_DMA_ADDRESS, dat);
+        break;
+      case FDD_DMA_ADDR_HI:
+        _setMEM(_FDD_DMA_ADDRESS+1, dat);
+        break;
       case OUT_PORT:
         //bit 0 out
         if ((dat && 0x01)==0x01) {

@@ -69,8 +69,8 @@ boolean _IPL() {
   }
   */
   _setMEM(_DISKNO, 0);
-  _setMEM(_TRACK, 0);
-  _setMEM(_SECTOR, 1);
+  _setMEM(_FDD_TRACK, 0);
+  _setMEM(_FDD_SECTOR, 1);
 
   //reading from SD
   for(j=0;j<CPMSYS_COUNT;j++) {
@@ -173,8 +173,8 @@ void _GOCPM(boolean jmp) {
     _setMEM(JMP_BDOS+1, lowByte(FBASE));
     _setMEM(JMP_BDOS+2, highByte(FBASE));
     //SETDMA 0x80
-    _setMEM(_DMAAD, 0x80);
-    _setMEM(_DMAAD+1, 0x00);
+    _setMEM(_FDD_DMA_ADDRESS, 0x80);
+    _setMEM(_FDD_DMA_ADDRESS+1, 0x00);
     //GET CURRENT DISK NUMBER   SEND TO THE CCP
     _Regs[_Reg_C] = _getMEM(CDISK);
     //GO TO CP/M FOR FURTHER PROCESSING
@@ -306,13 +306,13 @@ void _BIOS_LISTST() {
 }
 
 void _BIOS_SETTRK() {
-     _setMEM(_TRACK, _Regs[_Reg_C]);
+     out_port(FDD_PORT_TRK,_Regs[_Reg_C]); 
     _BIOS_RET();    
 }
 
 void _BIOS_HOME() {
     _Regs[_Reg_C] = 0;//track 0
-    _setMEM(_TRACK, _Regs[_Reg_C]);
+    out_port(FDD_PORT_TRK,_Regs[_Reg_C]); 
     _BIOS_RET();        
 }
 
@@ -325,7 +325,7 @@ void _BIOS_SELDSK() {
         _Regs[_Reg_L] = 0;  
       }
       else {
-      _setMEM(_DISKNO, d8);
+      out_port(FDD_PORT_DRV, d8);
       a16 = d8 * 16;
       a16 = a16 + _DPBASE;
       _Regs[_Reg_H] = highByte(a16);
@@ -335,34 +335,21 @@ void _BIOS_SELDSK() {
 }
 
 void _BIOS_SETSEC() {
-    _setMEM(_SECTOR, _Regs[_Reg_C]); 
+    out_port(FDD_PORT_SEC,_Regs[_Reg_C]); 
     _BIOS_RET();    
 }
 
 void _BIOS_SETDMA() {
-    _setMEM(_DMAAD, _Regs[_Reg_C]);
-    _setMEM(_DMAAD+1, _Regs[_Reg_B]);
+    out_port(FDD_DMA_ADDR_LO, _Regs[_Reg_C]);
+    out_port(FDD_DMA_ADDR_HI, _Regs[_Reg_B]);
     _BIOS_RET();    
 }
 
 void _BIOS_READ() {
      int i;
      uint8_t res;
-     blk = _getMEM(_SECTOR)-1;
-     blk = blk + _getMEM(_TRACK)*TRACK_SIZE; 
-     switch (_getMEM(_DISKNO)) {
-      case 0:
-         blk = blk +  SD_FDD_A_OFFSET;
-         break;
-     }
-     res = readSD(blk, 0);
-     if (res==1) {
-     for (i = 0 ; i < SD_BLK_SIZE ; i++) {
-        _dsk_buffer[i] = _buffer[i];
-      }
-     for(i=0;i<SD_BLK_SIZE;i++) {
-      _setMEM(_getMEM(_DMAAD)+_getMEM(_DMAAD+1)*256+i,_dsk_buffer[i]); 
-     }
+     out_port(FDD_PORT_CMD,FDD_RD_CMD);
+     if (in_port(FDD_PORT_CMD)) { 
      _Regs[_Reg_A] = DISK_SUCCESS;
      }
      else {
@@ -374,21 +361,8 @@ void _BIOS_READ() {
 void _BIOS_WRITE() {
     int i;
     uint8_t res; 
-     blk = _getMEM(_SECTOR)-1;
-     blk = blk + _getMEM(_TRACK)*TRACK_SIZE; 
-     switch (_getMEM(_DISKNO)) {
-      case 0:
-         blk = blk +  SD_FDD_A_OFFSET;
-         break;
-     } 
-    for (i = 0 ; i < SD_BLK_SIZE ; i++) {
-        _dsk_buffer[i] = _getMEM(_getMEM(_DMAAD)+_getMEM(_DMAAD+1)*256+i);
-    }
-    for(i=0;i<SD_BLK_SIZE;i++) {
-      _buffer[i] = _dsk_buffer[i]; 
-    }
-     res = writeSD(blk);
-     if (res==1) {
+    out_port(FDD_PORT_CMD,FDD_WRT_CMD);
+    if (in_port(FDD_PORT_CMD)) { 
       _Regs[_Reg_A] = DISK_SUCCESS;
      }
      else {
