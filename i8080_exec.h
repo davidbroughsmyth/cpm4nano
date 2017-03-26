@@ -76,6 +76,107 @@ void pc2sp() {
     _setMEM(_SP, lowByte(_PC));
     _setMEM(_SP+1, highByte(_PC));
 }
+
+uint8_t in_port(uint8_t port) {
+    uint8_t dat;
+    boolean readyFlag;
+    dat = 0x00;
+    switch (port) {
+      case 0:
+        //port 0
+        //bit 1 - ready to out (Altair)
+        //bit 5 - ready to in (Altair)
+        dat = 0x02;
+        if (Serial.available() > 0) {
+          dat = dat | 0x20;
+        }
+        break;
+      case 1:
+        //port 1
+        //input from console
+        do {
+        if (Serial.available() > 0) {
+            dat = Serial.read();
+            readyFlag = true;
+          }
+        } while (!readyFlag);
+        break;
+      //FDD ports
+      case FDD_PORT_0:
+        //status
+        
+        break;
+      case FDD_PORT_1:
+        //track
+        dat = _getMEM(_TRACK);
+        break;
+      case FDD_PORT_2:
+        //sector
+        dat = _getMEM(_SECTOR);
+        break;
+      case FDD_PORT_3:
+        //data
+        
+        break;
+
+      case IN_PORT:
+        dat = digitalRead(IN_pin);
+        if ((dat && 0x01)==0x01) {
+          dat = 0x01;  
+        }
+        else {
+          dat = 0x00;
+        } 
+        break;
+    }  
+    return dat;
+}
+
+
+void out_port(uint8_t port, uint8_t dat) {
+  switch (port) {
+      /*case 0:
+        //port 0
+        break;*/
+      case 1:
+        //port 1
+        //output to console (Altair)
+        Serial.write(dat);
+        break;
+      //FDD ports
+      case FDD_PORT_0:
+        //command
+        if (dat == FDD_RD_CMD) {
+         
+        }
+        if (dat == FDD_WRT_CMD) {
+         
+        }
+        break;
+      case FDD_PORT_1:
+        //track
+        _setMEM(_TRACK, dat);
+        break;
+      case FDD_PORT_2:
+        //sector
+        _setMEM(_SECTOR, dat);
+        break;
+      case FDD_PORT_3:
+        //data
+        
+        break;
+
+      case OUT_PORT:
+        //bit 0 out
+        if ((dat && 0x01)==0x01) {
+          digitalWrite(OUT_pin,HIGH);  
+        }
+        else {
+          digitalWrite(OUT_pin,LOW);
+        }
+        break;
+    }  
+}
   
   void _I8080_() {
     _PC++;
@@ -1599,45 +1700,7 @@ void pc2sp() {
     bool flag = false;
     _PC++;
     pa = _getMEM(_PC);
-    d8 = 0x00;
-    switch (pa) {
-      case 0:
-        //port 0
-        //bit 1 - ready to out (Altair)
-        //bit 5 - ready to in (Altair)
-        d8 = 0x02;
-        if (Serial.available() > 0) {
-          d8 = d8 | 0x20;
-        }
-        break;
-      case 1:
-        //port 1
-        //input from console
-        do {
-        if (Serial.available() > 0) {
-            d8 = Serial.read();
-            flag = true;
-          }
-        } while (!flag);
-        break;
-      //FDD ports
-      case FDD_PORT_0:
-        //status
-        
-        break;
-      case FDD_PORT_1:
-        //track
-        d8 = _getMEM(_TRACK);
-        break;
-      case FDD_PORT_2:
-        //sector
-        d8 = _getMEM(_SECTOR);
-        break;
-      case FDD_PORT_3:
-        //data
-        
-        break;
-    }
+    d8 = in_port(pa);
     _Regs[_Reg_A] = d8;
     _PC++;
   }
@@ -1649,38 +1712,7 @@ void pc2sp() {
     _PC++;
     pa = _getMEM(_PC);
     d8 = _Regs[_Reg_A];
-    switch (pa) {
-      /*case 0:
-        //port 0
-        break;*/
-      case 1:
-        //port 1
-        //output to console (Altair)
-        Serial.write(d8);
-        break;
-      //FDD ports
-      case FDD_PORT_0:
-        //command
-        if (d8 == FDD_RD_CMD) {
-         
-        }
-        if (d8 == FDD_WRT_CMD) {
-         
-        }
-        break;
-      case FDD_PORT_1:
-        //track
-        _setMEM(_TRACK, d8);
-        break;
-      case FDD_PORT_2:
-        //sector
-        _setMEM(_SECTOR, d8);
-        break;
-      case FDD_PORT_3:
-        //data
-        
-        break;
-    }
+    out_port(pa, d8);
     _PC++;
   }
 

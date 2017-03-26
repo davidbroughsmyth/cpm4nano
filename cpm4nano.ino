@@ -32,9 +32,7 @@
 
 #include <avr/pgmspace.h>
 #include "Sd2Card.h"
-//#include <EEPROM.h>
-//#include "CPM_BIN.h"
-#//include "TEST.h"
+//include "TEST.h"
 #include "CPM_def.h"
 
 
@@ -64,8 +62,8 @@ const uint16_t MEMTEST_TABLE_SIZE = 33;
 
 
 Sd2Card card;
-boolean DEBUG;
 
+boolean DEBUG;//debug mode flag
 uint32_t RAM_SIZE = 65536;
 
 const uint16_t CACHE_LINE_SIZE = 64;//128 byte max
@@ -85,6 +83,11 @@ boolean LEDon = false;
 uint8_t LEDcount;
 const uint8_t LEDdelay = 3;
 const uint8_t LEDpin = 9;//D9 pin - LED
+const uint8_t IN_pin = 8;//D8 pin - IN
+const uint8_t OUT_pin = 7;//D7 pin - OUT
+const uint8_t IN_PORT = 0xF0;//IN port
+const uint8_t OUT_PORT = 0xF1;//OUT port
+
 
 uint16_t breakpoint = 0xFFFF;
 bool exitFlag = false;
@@ -94,7 +97,7 @@ const int KbdBufferSize = 32;
 char KbdBuffer[KbdBufferSize + 1];
 int KbdPtr = 0;
 
-int port = 10;
+
 
 boolean Z80 = false;//Z80 emulation
 
@@ -244,16 +247,21 @@ void setup() {
   uint16_t k;
   uint32_t _cardsize;
   uint8_t res;
-  // start serial port at 9600 bps:
+  bool RAMTestPass = true;
+  // start serial port at 9600 bps
   Serial.begin(9600);
   while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
+    ; //wait for serial port to connect. Needed for native USB port only
   }
   delay(1000);
   clrscr();
+  //pins setup
   pinMode(LEDpin, OUTPUT);
   digitalWrite(LEDpin,LOW);
-  
+  pinMode(IN_pin, INPUT);
+  pinMode(OUT_pin, OUTPUT);
+  digitalWrite(OUT_pin,LOW);
+  //Timer1 setup
   cli();
   TCCR1A = 0;
   TCCR1B = 0;
@@ -263,7 +271,7 @@ void setup() {
   TCCR1B |= (1 << CS12) | (1 << CS10);//prescaler 1024
   TIMSK1 |= (1 << OCIE1A);
   sei();
-  
+  //logo
   color(2);
   Serial.println(F("***************************"));
   Serial.println(F("*  CP/M for Arduino Nano  *"));
@@ -271,7 +279,7 @@ void setup() {
   Serial.println(F(" https://acdc.foxylab.com *"));
   Serial.println(F("***************************"));
   Serial.println("");
-
+  //cache init
   for (i = 0; i < CACHE_LINES_NUM; i++) {
     cache_tag[i] = 0xFFFFFFFF;
   }
@@ -281,7 +289,7 @@ void setup() {
   for (i = 0; i < CACHE_LINES_NUM; i++) {
     cache_start[i] = i * CACHE_LINE_SIZE;
   }
-
+  //SD card init
   do {
     card.init(SPI_HALF_SPEED, 10);
     _cardsize = card.cardSize();
@@ -294,11 +302,9 @@ void setup() {
       delay(250);
     }  
   } while (_cardsize == 0);
-
+  //RAM test
   Serial.print(F("RAM test..."));
-  
-  bool RAMTestPass = true;
-
+  //RAM write
   j = 0;
   for (i = 0; i < RAM_SIZE ; i++) {
     _setMEM(i, pgm_read_byte_near(memtest_table+j));
@@ -313,8 +319,7 @@ void setup() {
       j = 0;
     }
   }
-
-
+  //RAM read
   j = 0;
   for (i = 0; i < RAM_SIZE; i++) {
     if ((i % 16384) == 0) {
@@ -341,7 +346,7 @@ void setup() {
   }
   Serial.print(i, DEC);
   Serial.println(F(" byte(s) of RAM are available"));
-
+  //RAM clear
   Serial.print(F("RAM clearing..."));
   for (i = 0; i < RAM_SIZE; i++) {
     _setMEM(i, 0);
@@ -353,29 +358,30 @@ void setup() {
     }
   }
   Serial.println("");
-
   color(9);
-
+  //stack init
   _SP = SP_INIT;
-  DEBUG = true;
+  DEBUG = true;//debug on
   delay(2000);
   clrscr();//clear screen
   xy(MON_Y, 0);//cursor positioning
   Serial.print('>');
 }
 
-ISR(TIMER1_COMPA_vect){//timer1 interrupt 
+//Timer1 interrupt
+ISR(TIMER1_COMPA_vect){ 
   if (LEDon) {
     LEDcount--;
     if (LEDcount==0) {
       LEDon = false;
-      digitalWrite(LEDpin,LOW);  
+      digitalWrite(LEDpin,LOW);//LED off  
     }
   }
 }
 
 void loop() {
   uint32_t adr;
+  uint8_t port;
   uint8_t dat;
   uint8_t i;
   boolean _EOF;

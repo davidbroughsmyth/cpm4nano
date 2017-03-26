@@ -35,6 +35,34 @@
       }
     }
 
+    //OXXYY - send byte to port
+    if (KbdBuffer[0]=='O') {
+      if (hexcheck(1,4)) {
+        port = kbd2byte(1);
+        dat = kbd2byte(3);
+        out_port(port, dat);
+        Serial.println("O.K.");
+        goto MON_END;
+      }
+      else {
+        goto MON_INVALID;
+      }
+    }
+
+    //IXX - read byte from port
+    if (KbdBuffer[0]=='I') {
+        if (hexcheck(1,2)) {
+          port = kbd2byte(1);
+          dat = in_port(port);
+          Serial.println(dat, HEX);
+          Serial.println(F("O.K."));
+          goto MON_END;
+        }
+        else {
+          goto MON_INVALID;
+      }
+    }
+
     //F - load Intel HEX file to memory
     if (KbdBuffer[0]=='F') {  
     Serial.println(F("Ready to receive the HEX file..."));  
