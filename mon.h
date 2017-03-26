@@ -6,6 +6,8 @@
 
 //TO DO
 //command length check
+
+    clrarea();//clear work area
     
     //LXXXXYY - load byte to memory
     if (KbdBuffer[0]=='L') {

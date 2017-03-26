@@ -7,31 +7,39 @@
 //TO DO
 //check for 4 fdd
 
-const uint32_t SD_MEM_SIZE  =   65536;
+//---------------------------------------------------
+//FDD constants
 const uint32_t SD_FDD_A_OFFSET = 0x0001000; 
 const uint32_t SD_FDD_B_OFFSET = 0x0002000; 
 const uint32_t SD_FDD_C_OFFSET = 0x0003000; 
 const uint32_t SD_FDD_D_OFFSET = 0x0004000; 
 const uint8_t FDD_NUM = 4; 
 const uint8_t CPM_EMPTY = 0xE5; //empty byte (disk)
-
-#define SECTOR_SIZE   128
-#define TRACK_SIZE    26
-#define DISK_SIZE     77
-
-#define FDD_SIZE TRACK_SIZE*DISK_SIZE //sectors
-
+const uint16_t SECTOR_SIZE = 128;
+const uint16_t TRACK_SIZE = 26;
+const uint16_t DISK_SIZE = 77;
+const uint32_t FDD_SIZE = TRACK_SIZE*DISK_SIZE;//sectors
 const uint8_t DISK_SUCCESS = 0;
 const uint8_t DISK_ERROR = 1;
-
+//---------------------------------------------------
+//memory constants
+/* V2.2:  b = memsize-20K(0x5000)
+0000   - 00FF     System scratch area
+0100   - 33FF+b   TPA (Transient Program Area) - COM file area
+3400+b - 3BFF+b   CCP - Console COmmand Processor
+3C00+b - 49FF+b   BDOS
+4A00+b - 4FFF+b   CBIOS*/
 const uint16_t b_offset = 0xA800; //RAM Size - 20K   62K RAM
 const uint16_t BOOT = 0;
+const uint16_t JMP_BOOT = 0; //warm start jmp 0x4a03
+const uint16_t IOBYTE = 3;//INTEL I/O BYTE
+const uint16_t CDISK = 4;//CURRENT DISK NUMBER 0=A,...
+const uint16_t LOGINBYTE = 4;
+const uint16_t JMP_BDOS = 5; //BDOS start jmp 0x3c06
 const uint16_t TBASE = 0x100;
 const uint16_t CBASE = 0x3400 + b_offset; //CCP 0xDC00
 const uint16_t FBASE = 0x3c06 + b_offset; //0xE406
-
 const uint16_t SP_INIT = CBASE - 0x100;
-
 const uint16_t _BIOS = 0x4a00 + b_offset; //0xF200
 //$4A00+$A800 43008  + 20K = 62K (63488 0xF800)
 const uint16_t _BIOS_LO = 0x4a00 + b_offset;
@@ -75,32 +83,13 @@ const uint16_t _CHK02 = _CHK01 + 16;//CHECK VECTOR 2
 const uint16_t _CHK03 = _CHK02 + 16;//CHECK VECTOR 3
 const uint16_t _ENDDAT = _CHK03 + 16;//END OF DATA AREA
 
-//BIOS : 0x4a00 ... 0x4fff
-
 //BOOT area
-const uint16_t JMP_BOOT = 0; //warm start jmp 0x4a03
-const uint16_t IOBYTE = 3;//INTEL I/O BYTE
-const uint16_t CDISK = 4;//CURRENT DISK NUMBER 0=A,...
-const uint16_t LOGINBYTE = 4;
-
-const uint16_t JMP_BDOS = 5; //BDOS start jmp 0x3c06
 
 #define SEC_BUF 0x80 //sector buffer
 
 boolean BIOS_INT = false;//BIOS Intercept flag
 
 /*
-0000 ... 00FF  -  RAM
-
-0100   
-
-V2.2:  b = memsize-20K(0x5000)
-0000   - 00FF     System scratch area
-0100   - 33FF+b   TPA (Transient Program Area) - COM file area
-3400+b - 3BFF+b   CCP - Console COmmand Processor
-3C00+b - 49FF+b   BDOS
-4A00+b - 4FFF+b   CBIOS
-
 System scratch area, "page zero":
 
 00 - 02     Jump to BIOS warm start entry point
