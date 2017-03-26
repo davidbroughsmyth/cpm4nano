@@ -35,6 +35,9 @@
 //include "TEST.h"
 #include "CPM_def.h"
 
+//version
+const char VER_MAJOR = '0';
+const char VER_MINOR = '1';
 //----------------------------------------------------
 //CPU emulation
 boolean DEBUG;//debug mode flag
@@ -273,11 +276,15 @@ void setup() {
   sei();
   //logo
   color(2);
-  Serial.println(F("***************************"));
-  Serial.println(F("*  CP/M for Arduino Nano  *"));
-  Serial.println(F("*    (C) 2017 FoxyLab     *"));
-  Serial.println(F(" https://acdc.foxylab.com *"));
-  Serial.println(F("***************************"));
+  Serial.println(F("********************************"));
+  Serial.print(F("*  CP/M for Arduino Nano V")); 
+  Serial.print(VER_MAJOR);
+  Serial.print(".");
+  Serial.print(VER_MINOR);
+  Serial.println(F("  *"));
+  Serial.println(F("*      (C) 2017 FoxyLab        *"));
+  Serial.println(F("*   https://acdc.foxylab.com   *"));
+  Serial.println(F("********************************"));
   Serial.println("");
   //cache init
   for (i = 0; i < CACHE_LINES_NUM; i++) {
@@ -357,7 +364,6 @@ void setup() {
       Serial.print("#");
     }
   }
-  Serial.println("");
   color(9);
   //stack init
   _SP = SP_INIT;
@@ -408,14 +414,17 @@ void loop() {
           //backspace
           if (KbdPtr>0) {
             KbdPtr--;
-            KbdBuffer[KbdPtr] = '\0'; 
+            KbdBuffer[KbdPtr] = '\0';
+            Serial.write(inChar);
+            Serial.write(" ");
+            Serial.write(inChar); 
           }
         }
         else {
           KbdBuffer[KbdPtr] = inChar;
           KbdPtr++;
+          Serial.write(inChar);
         }
-        Serial.write(inChar);
       }
     } while ((inChar != '\r') && (inChar != '\n') && (KbdPtr < KbdBufferSize));
     Serial.print('\n');

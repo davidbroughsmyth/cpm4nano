@@ -413,7 +413,7 @@
     }
 
 MON_INVALID:
-  Serial.println("???");//invalid command
+  Serial.println(F("???"));//invalid command
 MON_END:
 
 
