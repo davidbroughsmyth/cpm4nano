@@ -84,8 +84,6 @@ uint8_t LEDcount;
 const uint8_t LEDdelay = 3;
 const uint8_t LEDpin = 9;//D9 pin - LED
 
-
-
 uint16_t breakpoint = 0xFFFF;
 bool exitFlag = false;
 
@@ -98,7 +96,38 @@ int port = 10;
 
 boolean Z80 = false;//Z80 emulation
 
-const uint8_t BS_KEY=0xFF;
+//-----------------------------------------------------
+//SD read/write
+
+uint8_t readSD (uint32_t blk, uint16_t offset) {
+  uint8_t res;
+  res = card.readBlock(blk, _buffer, offset);
+  digitalWrite(LEDpin,HIGH);
+  //LEDon = true;
+  //LEDcount = LEDdelay;
+  return res;
+}
+
+uint8_t writeSD (uint32_t blk) {
+  uint8_t res;
+  res = card.writeBlock(blk, _buffer);
+  digitalWrite(LEDpin,HIGH);
+  LEDon = true;
+  LEDcount = LEDdelay;
+  return res;
+}
+
+//-----------------------------------------------------
+//keyboard monitor procedures
+
+//keys codes
+const uint8_t BS_KEY=0x08;
+const uint8_t DEL_KEY=0x7F;
+const uint8_t CTRL_Q_KEY=0x11;
+const uint8_t CTRL_C_KEY=0x03;
+const uint8_t CTRL_Z_KEY=0x1A;
+const uint8_t CTRL_O_KEY=0x0F;
+const uint8_t CTRL_X_KEY=0x18;
 
 int str2hex(String s)
 {
@@ -132,26 +161,6 @@ uint8_t chr2hex(char c)
   return x;
 }
 
-
-uint8_t readSD (uint32_t blk, uint16_t offset) {
-  uint8_t res;
-  res = card.readBlock(blk, _buffer, offset);
-  digitalWrite(LEDpin,HIGH);
-  //LEDon = true;
-  //LEDcount = LEDdelay;
-  return res;
-}
-
-uint8_t writeSD (uint32_t blk) {
-  uint8_t res;
-  res = card.writeBlock(blk, _buffer);
-  digitalWrite(LEDpin,HIGH);
-  LEDon = true;
-  LEDcount = LEDdelay;
-  return res;
-}
-
-//keyboard monitor procedures
 boolean hexcheck(uint8_t start, uint8_t len) {
   uint8_t i;
   boolean ok;
@@ -179,6 +188,8 @@ char upCase(char symbol) {
   return symbol;
 }
 
+//-----------------------------------------------------
+
 #include "MEM.h"
 #include "i8080_exec.h"
 #include "CPM_def.h"
@@ -204,8 +215,6 @@ cmd = _getMEM(_PC);
 #include "i8080_cmds.h"
   } while (exitFlag == false); 
 }
-
-
 
 void setup() {
   uint32_t i;
@@ -365,6 +374,7 @@ void loop() {
       inChar = '\0';
       if (Serial.available() > 0) {
         inChar = Serial.read();
+        Serial.print(uint8_t(inChar),HEX);
         inChar = upCase(inChar);
         if (uint8_t(inChar)==BS_KEY) {
           //backspace

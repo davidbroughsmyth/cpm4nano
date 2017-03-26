@@ -7,8 +7,6 @@
 //TO DO
 //screen position check
 
-#define CTRL_C 3
-
   if (DEBUG) {
   savecur();
   xy(0,0);
@@ -94,9 +92,9 @@
     if (Serial.available() > 0) {
           inChar = Serial.read();
     }
-  } while ((inChar != ' ') && (inChar != CTRL_C));
+  } while ((inChar != ' ') && (inChar != CTRL_C_KEY));
   loadcur();
-  if (inChar == CTRL_C) {
+  if (inChar == CTRL_C_KEY) {
     exitFlag = true;
   }
   }
