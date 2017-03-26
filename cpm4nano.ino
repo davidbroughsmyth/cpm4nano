@@ -111,6 +111,7 @@ const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
 //SD read/write
 Sd2Card card;
+const uint8_t SS_pin=10;//SS pin D10
 const uint16_t SD_BLK_SIZE = 128;
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
@@ -286,7 +287,7 @@ void setup() {
   }
   //SD card init
   do {
-    card.init(SPI_HALF_SPEED, 10);
+    card.init(SPI_HALF_SPEED, SS_pin);
     _cardsize = card.cardSize();
     if (_cardsize !=0) {
       Serial.println(F("Card size: "));
