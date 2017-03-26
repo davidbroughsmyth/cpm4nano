@@ -35,7 +35,9 @@
 //include "TEST.h"
 #include "CPM_def.h"
 
-
+//----------------------------------------------------
+//CPU emulation
+boolean DEBUG;//debug mode flag
 const static uint8_t PROGMEM parity_table[] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
     0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
@@ -54,18 +56,16 @@ const static uint8_t PROGMEM parity_table[] = {
     0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0,
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
 };
-
+boolean Z80 = false;//Z80 emulation
+//---------------------------------------------------
+//memory
+uint32_t RAM_SIZE = 65536;
 const static uint8_t PROGMEM memtest_table[] = {
     0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
 };
 const uint16_t MEMTEST_TABLE_SIZE = 33;
-
-
-Sd2Card card;
-
-boolean DEBUG;//debug mode flag
-uint32_t RAM_SIZE = 65536;
-
+//----------------------------------------------------
+//cache
 const uint16_t CACHE_LINE_SIZE = 64;//128 byte max
 const uint8_t CACHE_LINES_NUM = 4;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
@@ -73,24 +73,7 @@ uint32_t cache_tag[CACHE_LINES_NUM];
 uint16_t cache_start[CACHE_LINES_NUM];
 boolean cache_dirty[CACHE_LINES_NUM];                             
 static uint8_t cache[CACHE_SIZE];
-
-const uint16_t SD_BLK_SIZE = 128;
-
-static unsigned char _buffer[SD_BLK_SIZE];
-static unsigned char _dsk_buffer[SD_BLK_SIZE];
-
-uint16_t breakpoint = 0xFFFF;
-bool exitFlag = false;
-
-char inChar;
-const int KbdBufferSize = 32;
-char KbdBuffer[KbdBufferSize + 1];
-int KbdPtr = 0;
-
-
-
-boolean Z80 = false;//Z80 emulation
-
+//----------------------------------------------------
 //console emulation
 //console ports
 const uint8_t CON_PORT_STATUS = 0x00;//status
@@ -127,7 +110,10 @@ const uint8_t IN_PORT = 0xF0;//IN port
 const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
 //SD read/write
-
+Sd2Card card;
+const uint16_t SD_BLK_SIZE = 128;
+static unsigned char _buffer[SD_BLK_SIZE];
+static unsigned char _dsk_buffer[SD_BLK_SIZE];
 uint8_t readSD (uint32_t blk, uint16_t offset) {
   uint8_t res;
   res = card.readBlock(blk, _buffer, offset);
@@ -145,10 +131,16 @@ uint8_t writeSD (uint32_t blk) {
   LED_count = LED_delay;
   return res;
 }
-
+//----------------------------------------------------
+//debug
+uint16_t breakpoint = 0xFFFF;
+bool exitFlag = false;
 //-----------------------------------------------------
 //keyboard monitor procedures
-
+char inChar;
+const int KbdBufferSize = 32;
+char KbdBuffer[KbdBufferSize + 1];
+int KbdPtr = 0;
 //keys codes
 const uint8_t BS_KEY=0x08;
 const uint8_t DEL_KEY=0x7F;
