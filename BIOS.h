@@ -21,7 +21,7 @@ uint32_t blk;
 void _charOut(uint8_t c) {
     switch (CON_OUT) {
       case 0: //PUTTY
-        Serial.write(c);
+        out_port(CON_PORT_DATA, c);
         break;
     }
 }
@@ -68,9 +68,9 @@ boolean _IPL() {
     }
   }
   */
-  _setMEM(_DISKNO, 0);
-  _setMEM(_FDD_TRACK, 0);
-  _setMEM(_FDD_SECTOR, 1);
+  FDD_REG_DRV = 0;
+  FDD_REG_TRK = 0;
+  FDD_REG_SEC = 1;
 
   //reading from SD
   for(j=0;j<CPMSYS_COUNT;j++) {
@@ -173,8 +173,8 @@ void _GOCPM(boolean jmp) {
     _setMEM(JMP_BDOS+1, lowByte(FBASE));
     _setMEM(JMP_BDOS+2, highByte(FBASE));
     //SETDMA 0x80
-    _setMEM(_FDD_DMA_ADDRESS, 0x80);
-    _setMEM(_FDD_DMA_ADDRESS+1, 0x00);
+    out_port(FDD_PORT_DMA_ADDR_LO, 0x80);
+    out_port(FDD_PORT_DMA_ADDR_HI, 0x00);
     //GET CURRENT DISK NUMBER   SEND TO THE CCP
     _Regs[_Reg_C] = _getMEM(CDISK);
     //GO TO CP/M FOR FURTHER PROCESSING
@@ -241,7 +241,7 @@ void _BIOS_WBOOT() {
 void _BIOS_CONST() {
     switch (CON_IN) {
       case 0: //PUTTY
-        if (Serial.available() > 0) {
+        if ((in_port(CON_PORT_STATUS) & 0x20)!=0) {
           _Regs[_Reg_A] = 0xFF;
         }
         else {
@@ -254,18 +254,9 @@ void _BIOS_CONST() {
 
 
 void _BIOS_CONIN() {
-    bool flag = false;
-    char charIn;
     switch (CON_IN) {
       case 0: //PUTTY
-        do
-        {
-          if (Serial.available() > 0) {
-            _Regs[_Reg_A] = Serial.read();
-            _Regs[_Reg_A] = _Regs[_Reg_A] & B01111111;
-            flag = true;
-          }
-        } while (!flag);
+        _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
         break;
       }    
       _BIOS_RET();
@@ -287,16 +278,9 @@ void _BIOS_PUNCH() {
 
 void _BIOS_READER() {
       bool flag = false;
-      do
-        {
-          if (Serial.available() > 0) {
-            _Regs[_Reg_A] = Serial.read();
-            _Regs[_Reg_A] = _Regs[_Reg_A] & B01111111;
-            flag = true;
-          }
-        } while (!flag);
-        //ACK sent
-        Serial.write(ACK);
+      _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
+       //ACK sent
+       out_port(CON_PORT_DATA, ACK);
       _BIOS_RET();    
 }
 
@@ -340,8 +324,8 @@ void _BIOS_SETSEC() {
 }
 
 void _BIOS_SETDMA() {
-    out_port(FDD_DMA_ADDR_LO, _Regs[_Reg_C]);
-    out_port(FDD_DMA_ADDR_HI, _Regs[_Reg_B]);
+    out_port(FDD_PORT_DMA_ADDR_LO, _Regs[_Reg_C]);
+    out_port(FDD_PORT_DMA_ADDR_HI, _Regs[_Reg_B]);
     _BIOS_RET();    
 }
 

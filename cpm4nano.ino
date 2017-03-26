@@ -79,16 +79,6 @@ const uint16_t SD_BLK_SIZE = 128;
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
 
-boolean LEDon = false;
-uint8_t LEDcount;
-const uint8_t LEDdelay = 3;
-const uint8_t LEDpin = 9;//D9 pin - LED
-const uint8_t IN_pin = 8;//D8 pin - IN
-const uint8_t OUT_pin = 7;//D7 pin - OUT
-const uint8_t IN_PORT = 0xF0;//IN port
-const uint8_t OUT_PORT = 0xF1;//OUT port
-
-
 uint16_t breakpoint = 0xFFFF;
 bool exitFlag = false;
 
@@ -101,29 +91,47 @@ int KbdPtr = 0;
 
 boolean Z80 = false;//Z80 emulation
 
+//console emulation
+//console ports
+const uint8_t CON_PORT_STATUS = 0x00;//status
+const uint8_t CON_PORT_DATA = 0x01;//data
+//-----------------------------------------------------
 //FDD emulation
-//FDD controller registers
+//FDD controller ports
 const uint8_t FDD_BASE = 0xE0;//FDD base address
-const uint8_t FDD_PORT_CMD = FDD_BASE+0;//status/command register (r/w)
+const uint8_t FDD_PORT_CMD = FDD_BASE+0;//status/command
 const uint8_t FDD_PORT_TRK = FDD_BASE+1;//track
 const uint8_t FDD_PORT_SEC = FDD_BASE+2;//sector
 const uint8_t FDD_PORT_DRV = FDD_BASE+3;//drive select
-//DMA controller registers
-const uint8_t FDD_DMA_ADDR_LO = FDD_BASE+4;//DMA address low byte
-const uint8_t FDD_DMA_ADDR_HI = FDD_BASE+5;//DMA address high byte
+//DMA controller ports
+const uint8_t FDD_PORT_DMA_ADDR_LO = FDD_BASE+4;//DMA address low byte
+const uint8_t FDD_PORT_DMA_ADDR_HI = FDD_BASE+5;//DMA address high byte
+//FDD commands
 const uint8_t FDD_RD_CMD = 0x00; //read sector command
 const uint8_t FDD_WRT_CMD = 0x01; //write sector command
-const uint8_t FDD_DMA_RD = 0x00; //DMA read 
-const uint8_t FDD_DMA_WRT = 0x01; //DMA write
-boolean _FDD_STATUS;//true - O.K., false - ERROR
-
+//FDD registers
+uint8_t FDD_REG_SEC=1;//sector register
+uint8_t FDD_REG_TRK=0;//track register
+uint8_t FDD_REG_DRV=0;//drive register
+boolean FDD_REG_STATUS=false;//true - O.K., false - ERROR
+uint16_t FDD_REG_DMA=0;//DMA address register
+//-----------------------------------------------------
+//aux ports
+boolean LED_on = false;
+uint8_t LED_count;
+const uint8_t LED_delay = 3;
+const uint8_t LED_pin = 9;//D9 pin - LED
+const uint8_t IN_pin = 8;//D8 pin - IN
+const uint8_t OUT_pin = 7;//D7 pin - OUT
+const uint8_t IN_PORT = 0xF0;//IN port
+const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
 //SD read/write
 
 uint8_t readSD (uint32_t blk, uint16_t offset) {
   uint8_t res;
   res = card.readBlock(blk, _buffer, offset);
-  digitalWrite(LEDpin,HIGH);
+  digitalWrite(LED_pin,HIGH);
   //LEDon = true;
   //LEDcount = LEDdelay;
   return res;
@@ -132,9 +140,9 @@ uint8_t readSD (uint32_t blk, uint16_t offset) {
 uint8_t writeSD (uint32_t blk) {
   uint8_t res;
   res = card.writeBlock(blk, _buffer);
-  digitalWrite(LEDpin,HIGH);
-  LEDon = true;
-  LEDcount = LEDdelay;
+  digitalWrite(LED_pin,HIGH);
+  LED_on = true;
+  LED_count = LED_delay;
   return res;
 }
 
@@ -251,8 +259,8 @@ void setup() {
   delay(1000);
   clrscr();
   //pins setup
-  pinMode(LEDpin, OUTPUT);
-  digitalWrite(LEDpin,LOW);
+  pinMode(LED_pin, OUTPUT);
+  digitalWrite(LED_pin,LOW);
   pinMode(IN_pin, INPUT);
   pinMode(OUT_pin, OUTPUT);
   digitalWrite(OUT_pin,LOW);
@@ -365,11 +373,11 @@ void setup() {
 
 //Timer1 interrupt
 ISR(TIMER1_COMPA_vect){ 
-  if (LEDon) {
-    LEDcount--;
-    if (LEDcount==0) {
-      LEDon = false;
-      digitalWrite(LEDpin,LOW);//LED off  
+  if (LED_on) {
+    LED_count--;
+    if (LED_count==0) {
+      LED_on = false;
+      digitalWrite(LED_pin,LOW);//LED off  
     }
   }
 }
