@@ -15,8 +15,6 @@ const uint32_t SD_FDD_D_OFFSET = 0x0004000;
 const uint8_t FDD_NUM = 4; 
 const uint8_t CPM_EMPTY = 0xE5; //empty byte (disk)
 
-
-
 #define SECTOR_SIZE   128
 #define TRACK_SIZE    26
 #define DISK_SIZE     77
