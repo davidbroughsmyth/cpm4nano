@@ -64,6 +64,8 @@ const static uint8_t PROGMEM memtest_table[] = {
     0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
 };
 const uint16_t MEMTEST_TABLE_SIZE = 33;
+uint8_t RAM_MODE = 0;
+const uint32_t SD_MEM_OFFSET = 0x000400;
 //----------------------------------------------------
 //cache
 const uint16_t CACHE_LINE_SIZE = 64;//128 byte max
@@ -73,6 +75,7 @@ uint32_t cache_tag[CACHE_LINES_NUM];
 uint16_t cache_start[CACHE_LINES_NUM];
 boolean cache_dirty[CACHE_LINES_NUM];                             
 static uint8_t cache[CACHE_SIZE];
+const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;
 //----------------------------------------------------
 //console emulation
 //console ports
@@ -135,6 +138,7 @@ uint8_t writeSD (uint32_t blk) {
 //----------------------------------------------------
 //debug
 uint16_t breakpoint = 0xFFFF;
+boolean breakpointFlag = false;
 bool exitFlag = false;
 //-----------------------------------------------------
 //keyboard monitor procedures

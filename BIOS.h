@@ -7,23 +7,13 @@
 //TO DO
 //4 fdd
 
-
-
-
 //I/O devices flag
-bool CON_IN = 0; //serial console
-bool CON_OUT = 0; //serial console
-
 const uint8_t ACK = 0x06;
 
 uint32_t blk;
 
 void _charOut(uint8_t c) {
-    switch (CON_OUT) {
-      case 0: //PUTTY
-        out_port(CON_PORT_DATA, c);
-        break;
-    }
+    out_port(CON_PORT_DATA, c);
 }
 
 void _BIOS_RET() {
@@ -50,14 +40,13 @@ boolean _IPL() {
   uint8_t d8;
   boolean success = false;
   _SP = SP_INIT;
-  Serial.println(" ");
-  _charOut('I');
-  _charOut('P');
-  _charOut('L');
-  _charOut(0x0D);
-  _charOut(0x0A);
-  Serial.println(F("Starting CP/M loading..."));
-  
+  out_port(CON_PORT_DATA, 0x0D);  
+  out_port(CON_PORT_DATA, 0x0A);
+  out_port(CON_PORT_DATA, 'I');
+  out_port(CON_PORT_DATA, 'P');
+  out_port(CON_PORT_DATA, 'L');
+  out_port(CON_PORT_DATA, 0x0D);
+  out_port(CON_PORT_DATA, 0x0A);
   //reading from FLASH
   /*
   for(j=0;j<CPMSYS_LEN;j++) {
@@ -83,7 +72,7 @@ boolean _IPL() {
           _setMEM(CBASE+i+k+j*512, _dsk_buffer[i]);
         }   
       }  
-      Serial.print(".");   
+      out_port(CON_PORT_DATA, '.');
   }
   
   //checksum checking
@@ -93,74 +82,85 @@ boolean _IPL() {
         checksum = checksum + d8;
       }
   }
-  Serial.println("");
-  Serial.print(F("Checksum: "));
-  Serial.println(checksum, HEX);
+  out_port(CON_PORT_DATA, 0x0D);  
+  out_port(CON_PORT_DATA, 0x0A);
+  //Serial.print(F("Checksum: "));
+  //Serial.println(checksum, HEX);
   if (checksum != CPMSYS_CS) {
-     Serial.println(F("Checksum error!!!"));
+     out_port(CON_PORT_DATA, 'E');
+     out_port(CON_PORT_DATA, 'R');
+     out_port(CON_PORT_DATA, 'R');
+     out_port(CON_PORT_DATA, '!');
+     out_port(CON_PORT_DATA, 0x0D);  
+     out_port(CON_PORT_DATA, 0x0A);
      success = false;
   }
   else {
-  Serial.println(F("Checksum O.K."));
-  success = true;
+     out_port(CON_PORT_DATA, 'O');
+     out_port(CON_PORT_DATA, '.');
+     out_port(CON_PORT_DATA, 'K');
+     out_port(CON_PORT_DATA, '.');
+     out_port(CON_PORT_DATA, 0x0D);  
+     out_port(CON_PORT_DATA, 0x0A);
+     success = true;
   
-  i = 0;
-  i = i + _DPBASE;      
-  _setMEM(i + 0, 0x00);
-  _setMEM(i + 1, 0x00);
-  _setMEM(i + 2, 0x00);
-  _setMEM(i + 3, 0x00);
-  _setMEM(i + 4, 0x00);
-  _setMEM(i + 5, 0x00);
-  _setMEM(i + 6, 0x00);
-  _setMEM(i + 7, 0x00);
-  //DIRBUF
-  _setMEM(i + 8, lowByte(_DIRBUF));
-  _setMEM(i + 9, highByte(_DIRBUF));
-  //DPB
-  _setMEM(i + 10, lowByte(_DPBLK));
-  _setMEM(i + 11, highByte(_DPBLK));
-  //CSV
-  _setMEM(i + 12, lowByte(_CHK00));
-  _setMEM(i + 13, highByte(_CHK00));
-  //ALV
-  _setMEM(i + 14, lowByte(_ALL00));
-  _setMEM(i + 15, highByte(_ALL00));
-  //DPB init
-  i = _DPBLK;
-  //SPT
-  _setMEM(i, 26);
-  _setMEM(i + 1, 0);
-  //BSH
-  _setMEM(i + 2, 3);
-  //BLM
-  _setMEM(i + 3, 7); 
-  //EXM
-  _setMEM(i + 4, 0);
-  //DSM
-  _setMEM(i + 5, 242); 
-  _setMEM(i + 6, 0);
-  //DRM
-  _setMEM(i + 7, 63);  
-  _setMEM(i + 8, 0);
-  //AL0
-  _setMEM(i + 9, 192);
-  //AL1
-  _setMEM(i + 0xA, 0);
-  //CKS
-  _setMEM(i + 0xB, 0);
-  _setMEM(i + 0xC, 0);
-  //OFF
-  _setMEM(i + 0xD, 0);
-  _setMEM(i + 0xE, 0);
-  _setMEM(i + 0xF, 0);
+    i = 0;
+    i = i + _DPBASE;      
+    _setMEM(i + 0, 0x00);
+    _setMEM(i + 1, 0x00);
+    _setMEM(i + 2, 0x00);
+    _setMEM(i + 3, 0x00);
+    _setMEM(i + 4, 0x00);
+    _setMEM(i + 5, 0x00);
+    _setMEM(i + 6, 0x00);
+    _setMEM(i + 7, 0x00);
+    //DIRBUF
+    _setMEM(i + 8, lowByte(_DIRBUF));
+    _setMEM(i + 9, highByte(_DIRBUF));
+    //DPB
+    _setMEM(i + 10, lowByte(_DPBLK));
+    _setMEM(i + 11, highByte(_DPBLK));
+    //CSV
+    _setMEM(i + 12, lowByte(_CHK00));
+    _setMEM(i + 13, highByte(_CHK00));
+    //ALV
+    _setMEM(i + 14, lowByte(_ALL00));
+    _setMEM(i + 15, highByte(_ALL00));
+    //DPB init
+    i = _DPBLK;
+    //SPT
+    _setMEM(i, 26);
+    _setMEM(i + 1, 0);
+    //BSH
+    _setMEM(i + 2, 3);
+    //BLM
+    _setMEM(i + 3, 7); 
+    //EXM
+    _setMEM(i + 4, 0);
+    //DSM
+    _setMEM(i + 5, 242); 
+    _setMEM(i + 6, 0);
+    //DRM
+    _setMEM(i + 7, 63);  
+    _setMEM(i + 8, 0);
+    //AL0
+    _setMEM(i + 9, 192);
+    //AL1
+    _setMEM(i + 0xA, 0);
+    //CKS
+    _setMEM(i + 0xB, 0);
+    _setMEM(i + 0xC, 0);
+    //OFF
+    _setMEM(i + 0xD, 0);
+    _setMEM(i + 0xE, 0);
+    _setMEM(i + 0xF, 0);
   /*      
      BLS       BSH     BLM           EXM
    -----      ---     ---     DSM<256   DSM>=256
     1024       3       7         0        n/a 
    */
-  }
-  return success;
+    }
+    return success;
 }
 
 void _GOCPM(boolean jmp) {
@@ -185,13 +185,14 @@ void _GOCPM(boolean jmp) {
 
 void _BOOT() {
     //message BOOT
-    Serial.println(" ");
-    _charOut('B');
-    _charOut('O');
-    _charOut('O');
-    _charOut('T');
-    _charOut(0x0D);
-    _charOut(0x0A);
+    out_port(CON_PORT_DATA, 0x0D);
+    out_port(CON_PORT_DATA, 0x0A);
+    out_port(CON_PORT_DATA, 'B');
+    out_port(CON_PORT_DATA, 'O');
+    out_port(CON_PORT_DATA, 'O');
+    out_port(CON_PORT_DATA, 'T');
+    out_port(CON_PORT_DATA, 0x0D);
+    out_port(CON_PORT_DATA, 0x0A);
     //IOBYTE clear
     _setMEM(IOBYTE, 0x00);
     //select disk 0
@@ -202,25 +203,20 @@ void _BOOT() {
 
 void _WBOOT() {
   boolean load;
-    do {
     //message WBOOT
-    Serial.println(" ");
-    _charOut('W');
-    _charOut('B');
-    _charOut('O');
-    _charOut('O');
-    _charOut('T');
-    _charOut(0x0D);
-    _charOut(0x0A);
+    out_port(CON_PORT_DATA, 0x0D);
+    out_port(CON_PORT_DATA, 0x0A);
+    out_port(CON_PORT_DATA, 'W');
+    out_port(CON_PORT_DATA, 'B');
+    out_port(CON_PORT_DATA, 'O');
+    out_port(CON_PORT_DATA, 'O');
+    out_port(CON_PORT_DATA, 'T');
+    out_port(CON_PORT_DATA, 0x0D);
+    out_port(CON_PORT_DATA, 0x0A);
     //USE SPACE BELOW BUFFER FOR STACK
     _SP = 0x80;
-    load = _IPL();
-    if (load) {
-    Serial.println(F("CP/M loading successfull"));
-    }
-    else {
-      Serial.println(F("CP/M loading failed!"));
-    }
+    do {
+      load = _IPL();
     } while (!load);
     //INITIALIZE AND GO TO CP/M
     _GOCPM(true);
@@ -228,37 +224,27 @@ void _WBOOT() {
 
 void _BIOS_BOOT() {
     _BOOT();
-    //_BIOS_RET();  ???    
 }
 
 
 void _BIOS_WBOOT() {
     _WBOOT();
-    //_BIOS_RET(); ???
 }
 
 
 void _BIOS_CONST() {
-    switch (CON_IN) {
-      case 0: //PUTTY
-        if ((in_port(CON_PORT_STATUS) & 0x20)!=0) {
+     if ((in_port(CON_PORT_STATUS) & 0x20)!=0) {
           _Regs[_Reg_A] = 0xFF;
-        }
-        else {
+     }
+     else {
           _Regs[_Reg_A] = 0x00;
-        }
-        break;
     }
     _BIOS_RET();
 }
 
 
 void _BIOS_CONIN() {
-    switch (CON_IN) {
-      case 0: //PUTTY
-        _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
-        break;
-      }    
+      _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
       _BIOS_RET();
 }
 
