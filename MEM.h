@@ -14,7 +14,7 @@ uint8_t _getMEM(uint16_t adr) {
   uint8_t res;
   switch (RAM_MODE) {
     case 0: //SD Card
-        blk = adr / CACHE_LINE_SIZE;
+        blk = adr >> CACHE_LINE_POW; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -30,7 +30,6 @@ uint8_t _getMEM(uint16_t adr) {
           {            
             if (cache_tag[0] != CACHE_LINE_EMPTY) {
             //line 0 -> SD
-            //Serial.println("Ex");
               if (cache_dirty[0]) {
                 for(i=0;i<CACHE_LINE_SIZE;i++) {
                   _buffer[i] = cache[cache_start[0]+i];
@@ -68,7 +67,7 @@ uint8_t _getMEM(uint16_t adr) {
             sel_blk++;
           }
         }
-        adr = adr % CACHE_LINE_SIZE;
+        adr = adr & (CACHE_LINE_SIZE - 1);
         x = cache[cache_start[sel_blk] + adr];//read from cache
         break;
     case 1: //SPI SRAM
@@ -91,7 +90,7 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   uint8_t res;
   switch (RAM_MODE) {
     case 0: //SD Card
-        blk = adr / CACHE_LINE_SIZE;
+        blk = adr >> CACHE_LINE_POW; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -143,7 +142,7 @@ void _setMEM(uint16_t adr, uint8_t  x) {
             sel_blk++;
           }
         }
-        adr = adr % CACHE_LINE_SIZE;
+        adr = adr & (CACHE_LINE_SIZE - 1);
         cache[cache_start[sel_blk] + adr] = x;//cache update
         cache_dirty[sel_blk] = true;
         break;

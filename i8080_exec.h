@@ -248,10 +248,10 @@ void out_port(uint8_t port, uint8_t dat) {
     case OUT_PORT:
       //bit 0 out
       if ((dat && 0x01) == 0x01) {
-        digitalWrite(OUT_pin, HIGH);
+        fastDigitalWrite(OUT_pin, HIGH);
       }
       else {
-        digitalWrite(OUT_pin, LOW);
+        fastDigitalWrite(OUT_pin, LOW);
       }
       break;
   }

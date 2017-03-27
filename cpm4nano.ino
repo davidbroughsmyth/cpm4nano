@@ -73,8 +73,9 @@ uint8_t RAM_MODE = 0;
 const uint32_t SD_MEM_OFFSET = 0x000400;
 //----------------------------------------------------
 //cache
-const uint16_t CACHE_LINE_SIZE = 64;//128 byte max
-const uint8_t CACHE_LINES_NUM = 4;
+const uint8_t CACHE_LINE_POW = 6;
+const uint8_t CACHE_LINE_SIZE = 1 << CACHE_LINE_POW;//128 byte max
+const uint8_t CACHE_LINES_NUM = 8;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
 uint32_t cache_tag[CACHE_LINES_NUM];
 uint16_t cache_start[CACHE_LINES_NUM];
@@ -126,7 +127,7 @@ static unsigned char _dsk_buffer[SD_BLK_SIZE];
 uint8_t readSD (uint32_t blk, uint16_t offset) {
   uint8_t res;
   res = card.readBlock(blk, _buffer, offset);
-  digitalWrite(LED_pin,HIGH);
+  //fastDigitalWrite(LED_pin,HIGH);
   //LEDon = true;
   //LEDcount = LEDdelay;
   return res;
@@ -135,8 +136,10 @@ uint8_t readSD (uint32_t blk, uint16_t offset) {
 uint8_t writeSD (uint32_t blk) {
   uint8_t res;
   res = card.writeBlock(blk, _buffer);
-  digitalWrite(LED_pin,HIGH);
-  LED_on = true;
+  if (!LED_on) { 
+    digitalWrite(LED_pin,HIGH);
+    LED_on = true;
+  }
   LED_count = LED_delay;
   return res;
 }
