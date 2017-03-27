@@ -375,6 +375,12 @@
       switch (KbdBuffer[1]) {
         case 'A': diskno = 0;
              break;
+        case 'B': diskno = 1;
+             break;
+        case 'C': diskno = 2;
+             break;
+        case 'D': diskno = 3;
+             break;
       }
       if (diskno == 0xFF) {
         color(1);
@@ -385,7 +391,16 @@
         Serial.println(F("Format disk"));
         Serial.println("");
         //format
-        start = SD_FDD_A_OFFSET; //+ diskno*0x400;
+        switch (diskno) {
+          case 0: start = SD_FDD_A_OFFSET;
+                  break;
+          case 1: start = SD_FDD_B_OFFSET;
+                  break;
+          case 2: start = SD_FDD_C_OFFSET;
+                  break;
+          case 3: start = SD_FDD_D_OFFSET;
+                  break;
+        }
         for (uint32_t i = 0; i<SD_BLK_SIZE; i++) {
           _buffer[i] = CPM_EMPTY;
         }
