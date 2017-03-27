@@ -224,6 +224,7 @@ char upCase(char symbol) {
 #include "i8080_exec.h"
 #include "ESC.h"
 #include "BIOS.h"
+#include "i8080_fns.h"
 
 void call(word addr)
 {
@@ -241,7 +242,7 @@ if (_PC ==  breakpoint) {
 #include "BIOS_int.h"
 cmd = _getMEM(_PC);
 #include "debug.h"
-#include "i8080_cmds.h"
+((CmdFunction) pgm_read_word (&doCmdArray [cmd])) ();
   } while (exitFlag == false); 
 }
 
