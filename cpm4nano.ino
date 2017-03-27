@@ -304,7 +304,7 @@ void setup() {
   }
   //SD card init
   do {
-    card.init(SPI_HALF_SPEED, SS_pin);
+    card.init(SPI_FULL_SPEED, SS_pin);
     _cardsize = card.cardSize();
     if (_cardsize !=0) {
       Serial.println(F("Card size: "));
