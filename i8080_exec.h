@@ -35,6 +35,8 @@ uint8_t _Regs[8];
   7 - A
 */
 
+uint8_t SZP_RESET = B00111011;
+uint8_t ZP_RESET = B10111011;
 #define _setFlags_S(b) bitWrite(_Regs[_Reg_M],7,b)
 #define _setFlags_Z(b) bitWrite(_Regs[_Reg_M],6,b)
 #define _setFlags_A(b) bitWrite(_Regs[_Reg_M],4,b)
@@ -430,25 +432,8 @@ void _I8080_ADD(uint8_t reg) {
   else {
     _setFlags_C(0);
   }
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _Regs[_Reg_A] = d8;
   _PC++;
 }
@@ -474,25 +459,8 @@ void _I8080_ADI() {
   else {
     _setFlags_C(0);
   }
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _Regs[_Reg_A] = d8;
   _PC++;
 }
@@ -526,25 +494,8 @@ void _I8080_ADC(uint8_t reg) {
   else {
     _setFlags_C(0);
   }
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _Regs[_Reg_A] = d8;
   _PC++;
 }
@@ -574,25 +525,8 @@ void _I8080_ACI() {
   else {
     _setFlags_C(0);
   }
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _Regs[_Reg_A] = d8;
   _PC++;
 }
@@ -617,25 +551,9 @@ void _I8080_SUB(uint8_t reg) {
   }
   else {
     _setFlags_C(1);
-  }    if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  } 
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
@@ -663,25 +581,8 @@ void _I8080_SUI() {
   else {
     _setFlags_C(1);
   }
-  if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
@@ -714,25 +615,8 @@ void _I8080_SBB(uint8_t reg) {
   else {
     _setFlags_C(1);
   }
-  if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
@@ -762,25 +646,8 @@ void _I8080_SBI() {
   else {
     _setFlags_C(1);
   }
-  if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
@@ -804,25 +671,8 @@ void _I8080_INR(uint8_t reg) {
   }
   d8++;
   _Regs[reg] = d8;
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   //AC  ???
   if (d8 == 0x10) {
@@ -847,25 +697,8 @@ void _I8080_DCR(uint8_t reg) {
   }
   d8--;
   _Regs[reg] = d8;
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   //AC ???
   _PC++;
@@ -990,19 +823,8 @@ void _I8080_DAA() {
     d8 = d8 | 0x60;
   }
   _Regs[_Reg_A] = _Regs[_Reg_A] + d8;
-  d1 = pgm_read_byte_near(parity_table + _Regs[_Reg_A]);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
-  if (_Regs[_Reg_A] == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & ZP_RESET) | (pgm_read_byte_near(SZP_table + _Regs[_Reg_A]) & B01111111);
   _PC++;
 }
 
@@ -1028,25 +850,8 @@ void _I8080_ANA(uint8_t reg) {
   d8 = d8 & _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _PC++;
 }
@@ -1067,25 +872,8 @@ void _I8080_ANI() {
   d8 = d8 & _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _PC++;
 }
@@ -1105,25 +893,8 @@ void _I8080_ORA(uint8_t reg) {
   d8 = d8 | _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -1138,25 +909,8 @@ void _I8080_ORI() {
   d8 = d8 | _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -1177,25 +931,8 @@ void _I8080_XRA(uint8_t reg) {
   d8 = d8 ^ _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -1210,25 +947,8 @@ void _I8080_XRI() {
   d8 = d8 ^ _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
-  if (d8 == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d8 & B10000000) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + d8);
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -1253,25 +973,9 @@ void _I8080_CMP(uint8_t reg) {
   }
   else {
     _setFlags_C(1);
-  }    if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  }    
+    //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
@@ -1297,25 +1001,8 @@ void _I8080_CPI() {
   else {
     _setFlags_C(1);
   }
-  if ((d16 & 0xFF) == 0) {
-    _setFlags_Z(1);
-  }
-  else {
-    _setFlags_Z(0);
-  }
-  if ((d16 & 0x80) == 0) {
-    _setFlags_S(0);
-  }
-  else {
-    _setFlags_S(1);
-  }
-  d1 = pgm_read_byte_near(parity_table + (d16 & 0xFF));
-  if (d1  == 0) {
-    _setFlags_P(0);
-  }
-  else {
-    _setFlags_P(1);
-  }
+  //SZP flags
+  _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
     _setFlags_A(1);
   }
