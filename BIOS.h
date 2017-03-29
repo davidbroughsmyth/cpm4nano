@@ -47,16 +47,6 @@ boolean _IPL() {
   out_port(CON_PORT_DATA, 'L');
   out_port(CON_PORT_DATA, 0x0D);
   out_port(CON_PORT_DATA, 0x0A);
-  //reading from FLASH
-  /*
-  for(j=0;j<CPMSYS_LEN;j++) {
-    d8 = pgm_read_byte_near(CPM_BIN+j);
-    _setMEM(j+CBASE, d8);
-    if ((j % 1024) == 0) {
-      Serial.print(".");
-    }
-  }
-  */
   FDD_REG_DRV = 0;
   FDD_REG_TRK = 0;
   FDD_REG_SEC = 1;

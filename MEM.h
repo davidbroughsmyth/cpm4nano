@@ -12,6 +12,7 @@ uint8_t _getMEM(uint16_t adr) {
   uint16_t j;
   uint8_t sel_blk;
   uint8_t res;
+  uint8_t LRC;
   switch (RAM_MODE) {
     case 0: //SD Card
         blk = adr >> CACHE_LINE_POW; 
@@ -31,9 +32,12 @@ uint8_t _getMEM(uint16_t adr) {
             if (cache_tag[0] != CACHE_LINE_EMPTY) {
             //line 0 -> SD
               if (cache_dirty[0]) {
+                LRC = 0;//LRC reset
                 for(i=0;i<CACHE_LINE_SIZE;i++) {
                   _buffer[i] = cache[cache_start[0]+i];
+                  LRC = _buffer[i] ^ LRC;//LRC calculation
                 }
+                _buffer[CACHE_LINE_SIZE] = LRC;//LRC write
                 res = writeSD(cache_tag[0]);
               }
             }
@@ -50,9 +54,16 @@ uint8_t _getMEM(uint16_t adr) {
           //read new line from SD
           cache_tag[sel_blk] = blk;
           res = readSD(blk, 0);
+          LRC = 0;//LRC reset
           for(i=0;i<CACHE_LINE_SIZE;i++) {
                cache[cache_start[sel_blk]+i] = _buffer[i];
+               LRC = _buffer[i] ^ LRC;//LRC calculation
             }
+          if (_buffer[CACHE_LINE_SIZE] != LRC) {
+            MEM_ERR = true;
+            exitFlag = true;//quit to monitor
+            return(0);
+          }
           cache_dirty[sel_blk] = false;
         }
         else { //cache hit
@@ -88,6 +99,7 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   uint16_t j;
   uint8_t sel_blk;
   uint8_t res;
+  uint8_t LRC;
   switch (RAM_MODE) {
     case 0: //SD Card
         blk = adr >> CACHE_LINE_POW; 
@@ -107,9 +119,12 @@ void _setMEM(uint16_t adr, uint8_t  x) {
             if (cache_tag[0] != CACHE_LINE_EMPTY) {
             //line 0 -> SD
               if (cache_dirty[0]) {
+                LRC = 0;//LRC reset
                 for(i=0;i<CACHE_LINE_SIZE;i++) {
-                _buffer[i] = cache[cache_start[0]+i];
+                  _buffer[i] = cache[cache_start[0]+i];
+                  LRC = _buffer[i] ^ LRC;//LRC calculation
                 }
+                _buffer[CACHE_LINE_SIZE] = LRC;//LRC add
                 res = writeSD(cache_tag[0]);
               }
             }
@@ -126,9 +141,16 @@ void _setMEM(uint16_t adr, uint8_t  x) {
           //read new line from SD
           cache_tag[sel_blk] = blk;
           res = readSD(blk, 0);
+          LRC = 0;//LRC reset
           for(i=0;i<CACHE_LINE_SIZE;i++) {
                cache[cache_start[sel_blk]+i] = _buffer[i];
+               LRC = _buffer[i] ^ LRC;//LRC calculation
             }
+          if (_buffer[CACHE_LINE_SIZE] != LRC) {
+            MEM_ERR = true;
+            exitFlag = true;//quit to monitor
+            return;
+          }
           cache_dirty[sel_blk] = false;
         }        
         else { //cache hit

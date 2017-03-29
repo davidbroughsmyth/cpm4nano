@@ -71,6 +71,7 @@ const static uint8_t PROGMEM memtest_table[] = {
 const uint16_t MEMTEST_TABLE_SIZE = 33;
 uint8_t RAM_MODE = 0;
 const uint32_t SD_MEM_OFFSET = 0x000400;
+boolean MEM_ERR = false;
 //----------------------------------------------------
 //cache
 const uint8_t CACHE_LINE_POW = 6;
@@ -248,6 +249,12 @@ cmd = _getMEM(_PC);
 #include "debug.h"
 ((CmdFunction) pgm_read_word (&doCmdArray [cmd])) ();
   } while (exitFlag == false); 
+  if (MEM_ERR) {
+    MEM_ERR = false;
+    clrscr();
+    Serial.println("");
+    Serial.println("Memory Error!!!");
+  }
 }
 
 void setup() {
