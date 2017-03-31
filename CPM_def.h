@@ -29,20 +29,20 @@ const uint8_t DISK_ERROR = 1;
 3400+b - 3BFF+b   CCP - Console COmmand Processor
 3C00+b - 49FF+b   BDOS
 4A00+b - 4FFF+b   CBIOS*/
-const uint16_t b_offset = 0xA800; //RAM Size - 20K   62K RAM
+const uint16_t B_OFFSET = (RAM_SIZE - 20U)*1024U; //(RAM Size - 20K), KBytes
 const uint16_t BOOT = 0;
 const uint16_t JMP_BOOT = 0; //warm start jmp 0x4a03
 const uint16_t IOBYTE = 3;//INTEL I/O BYTE
 const uint16_t CDISK = 4;//CURRENT DISK NUMBER 0=A,...
 const uint16_t LOGINBYTE = 4;
 const uint16_t JMP_BDOS = 5; //BDOS start jmp 0x3c06
-const uint16_t TBASE = 0x100;
-const uint16_t CBASE = 0x3400 + b_offset; //CCP 0xDC00
-const uint16_t FBASE = 0x3c06 + b_offset; //0xE406
-const uint16_t SP_INIT = CBASE - 0x100;
-const uint16_t _BIOS = 0x4a00 + b_offset; //0xF200
+const uint16_t TBASE = 0x100U;
+const uint16_t CBASE = 0x3400U + B_OFFSET; //CCP 0xDC00
+const uint16_t FBASE = 0x3c06U + B_OFFSET; //0xE406
+const uint16_t SP_INIT = CBASE - 0x100U;
+const uint16_t _BIOS = 0x4a00U + B_OFFSET; //0xF200
 //$4A00+$A800 43008  + 20K = 62K (63488 0xF800)
-const uint16_t _BIOS_LO = 0x4a00 + b_offset;
+const uint16_t _BIOS_LO = 0x4a00U + B_OFFSET;
 const uint16_t _BIOS_HI = _BIOS_LO + 0x32;
 const uint16_t _DPBASE = _BIOS_HI + 1; //DPB
 //TRANS, 0000H

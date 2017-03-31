@@ -30,11 +30,12 @@
 */
 
 //TO DO
-
+const uint8_t RAM_SIZE = 32;//RAM Size, KBytes
 #include <avr/pgmspace.h>
 #include "Sd2Card.h"
 //include "TEST.h"
 #include "CPM_def.h"
+#include "SpiRAM.h"
 
 //version
 const char VER_MAJOR = '0';
@@ -64,7 +65,6 @@ const static uint8_t PROGMEM SZP_table[] = {
 boolean Z80 = false;//Z80 emulation
 //---------------------------------------------------
 //memory
-uint32_t RAM_SIZE = 65536;
 const static uint8_t PROGMEM memtest_table[] = {
     0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
 };
@@ -121,7 +121,7 @@ const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
 //SD read/write
 Sd2Card card;
-const uint8_t SS_pin=10;//SS pin D10
+const uint8_t SS_SD_pin=10;//SS pin D10
 const uint16_t SD_BLK_SIZE = 128;
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
@@ -145,6 +145,24 @@ uint8_t writeSD (uint32_t blk) {
   return res;
 }
 //----------------------------------------------------
+//SPI RAM read/write
+const uint8_t SS_SPIRAM_pin=6;//SS SPI RAM pin D6
+const uint16_t SPIRAM_DELAY_US = 100;
+SpiRAM SpiRam(0, SS_SPIRAM_pin);
+
+uint8_t readSPIRAM (uint16_t adr) {
+  uint8_t dat; 
+  dat = uint8_t(SpiRam.read_byte(adr));
+  delayMicroseconds(SPIRAM_DELAY_US);
+  return dat;
+}
+
+void writeSPIRAM (uint16_t adr, uint8_t dat) {
+  SpiRam.write_byte(adr, char(dat));
+  delayMicroseconds(SPIRAM_DELAY_US);
+}
+
+//---------------------------------------------------
 //debug
 uint16_t breakpoint = 0xFFFF;
 boolean breakpointFlag = false;
@@ -311,7 +329,7 @@ void setup() {
   }
   //SD card init
   do {
-    card.init(SPI_FULL_SPEED, SS_pin);
+    card.init(SPI_FULL_SPEED, SS_SD_pin);
     _cardsize = card.cardSize();
     if (_cardsize !=0) {
       Serial.println(F("Card size: "));
@@ -324,9 +342,11 @@ void setup() {
   } while (_cardsize == 0);
   //RAM test
   Serial.print(F("RAM test..."));
+  Serial.println(RAM_SIZE);
+  Serial.println(RAM_SIZE*1024U);
   //RAM write
   j = 0;
-  for (i = 0; i < RAM_SIZE ; i++) {
+  for (i = 0; i < (RAM_SIZE*1024U) ; i++) {
     _setMEM(i, pgm_read_byte_near(memtest_table+j));
     if ((i % 16384) == 0) {
       Serial.println("");
@@ -341,7 +361,7 @@ void setup() {
   }
   //RAM read
   j = 0;
-  for (i = 0; i < RAM_SIZE; i++) {
+  for (i = 0; i < RAM_SIZE*1024U; i++) {
     if ((i % 16384) == 0) {
       Serial.println("");
     }
@@ -352,7 +372,6 @@ void setup() {
       RAMTestPass = false;
       Serial.print(F("RAM test failed at byte "));
       Serial.println(i, HEX);
-      RAM_SIZE = i;
       break;
     }
     j++;
@@ -368,7 +387,7 @@ void setup() {
   Serial.println(F(" byte(s) of RAM are available"));
   //RAM clear
   Serial.print(F("RAM clearing..."));
-  for (i = 0; i < RAM_SIZE; i++) {
+  for (i = 0; i < RAM_SIZE*1024U; i++) {
     _setMEM(i, 0);
     if ((i % 16384) == 0) {
       Serial.println("");

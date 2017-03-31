@@ -26,8 +26,8 @@ void _BIOS_RET() {
     _PC = a16;
 }
 
-#define CPMSYS_COUNT 15
-#define CPMSYS_LEN 7680
+#define CPMSYS_COUNT 11 //15
+#define CPMSYS_LEN 5632 //7680
 #define CPMSYS_START 0x100
 #define CPMSYS_CS 0xBC
 
@@ -39,6 +39,8 @@ boolean _IPL() {
   uint8_t res;
   uint8_t d8;
   boolean success = false;
+  Serial.print("CBASE: ");
+  Serial.print(CBASE, HEX); 
   _SP = SP_INIT;
   out_port(CON_PORT_DATA, 0x0D);  
   out_port(CON_PORT_DATA, 0x0A);
@@ -74,9 +76,9 @@ boolean _IPL() {
   }
   out_port(CON_PORT_DATA, 0x0D);  
   out_port(CON_PORT_DATA, 0x0A);
-  //Serial.print(F("Checksum: "));
-  //Serial.println(checksum, HEX);
-  if (checksum != CPMSYS_CS) {
+  Serial.print(F("Checksum: "));
+  Serial.println(checksum, HEX);
+  /*if (checksum != CPMSYS_CS) {
      out_port(CON_PORT_DATA, 'E');
      out_port(CON_PORT_DATA, 'R');
      out_port(CON_PORT_DATA, 'R');
@@ -85,7 +87,7 @@ boolean _IPL() {
      out_port(CON_PORT_DATA, 0x0A);
      success = false;
   }
-  else {
+  else*/ {
      out_port(CON_PORT_DATA, 'O');
      out_port(CON_PORT_DATA, '.');
      out_port(CON_PORT_DATA, 'K');
