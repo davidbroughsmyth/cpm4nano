@@ -345,7 +345,7 @@
     //S - sector print
     if (KbdBuffer[0]=='S') {
       uint16_t i;
-      byte res;
+      uint8_t res;
       adr = kbd2word(2);
       switch (KbdBuffer[1]) {
         case 'A': adr = adr + SD_FDD_A_OFFSET;
@@ -371,6 +371,7 @@
     if (KbdBuffer[0]=='X') {
       uint8_t diskno;
       uint32_t start;
+      uint8_t res;
       diskno = 0xFF;
       switch (KbdBuffer[1]) {
         case 'A': diskno = 0;
@@ -402,13 +403,13 @@
                   break;
         }
         for (uint32_t i = 0; i<SD_BLK_SIZE; i++) {
-          _buffer[i] = CPM_EMPTY;
+          _dsk_buffer[i] = CPM_EMPTY;
         }
         for (uint32_t i = 0; i<DISK_SIZE*TRACK_SIZE; i++) {
           Serial.print('\r');
           Serial.print(F("Sector "));
           Serial.print(i,DEC);
-          writeSD(i+start);
+          res = card.writeBlock(i+start, _dsk_buffer);
         }
         Serial.println("");
       }

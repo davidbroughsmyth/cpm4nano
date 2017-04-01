@@ -26,10 +26,10 @@ void _BIOS_RET() {
     _PC = a16;
 }
 
-#define CPMSYS_COUNT 11 //15
-#define CPMSYS_LEN 5632 //7680
+#define CPMSYS_COUNT 11
+#define CPMSYS_LEN 5632
 #define CPMSYS_START 0x100
-#define CPMSYS_CS 0xBC
+#define CPMSYS_CS 0x1A
 
 boolean _IPL() {
   uint16_t i;
@@ -40,7 +40,13 @@ boolean _IPL() {
   uint8_t d8;
   boolean success = false;
   Serial.print("CBASE: ");
-  Serial.print(CBASE, HEX); 
+  Serial.println(CBASE, HEX); 
+  Serial.print("FBASE: ");
+  Serial.println(FBASE, HEX);
+  Serial.print("BIOS: ");
+  Serial.print(_BIOS_LO, HEX);
+  Serial.print(" ... ");
+  Serial.println(_BIOS_HI, HEX);  
   _SP = SP_INIT;
   out_port(CON_PORT_DATA, 0x0D);  
   out_port(CON_PORT_DATA, 0x0A);
@@ -78,7 +84,7 @@ boolean _IPL() {
   out_port(CON_PORT_DATA, 0x0A);
   Serial.print(F("Checksum: "));
   Serial.println(checksum, HEX);
-  /*if (checksum != CPMSYS_CS) {
+  if (checksum != CPMSYS_CS) {
      out_port(CON_PORT_DATA, 'E');
      out_port(CON_PORT_DATA, 'R');
      out_port(CON_PORT_DATA, 'R');
@@ -87,7 +93,7 @@ boolean _IPL() {
      out_port(CON_PORT_DATA, 0x0A);
      success = false;
   }
-  else*/ {
+  else {
      out_port(CON_PORT_DATA, 'O');
      out_port(CON_PORT_DATA, '.');
      out_port(CON_PORT_DATA, 'K');
@@ -334,7 +340,8 @@ void _BIOS_WRITE() {
 }
 
 void _BIOS_SECTRAN() {
-     _Regs[_Reg_L] = _Regs[_Reg_C]; 
+     //_Regs[_Reg_C] -> logical sector (from 0)
+     _Regs[_Reg_L] = _Regs[_Reg_C]+1; 
      _Regs[_Reg_H] = 0;
     _BIOS_RET();    
 }

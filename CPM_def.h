@@ -43,7 +43,7 @@ const uint16_t SP_INIT = CBASE - 0x100U;
 const uint16_t _BIOS = 0x4a00U + B_OFFSET; //0xF200
 //$4A00+$A800 43008  + 20K = 62K (63488 0xF800)
 const uint16_t _BIOS_LO = 0x4a00U + B_OFFSET;
-const uint16_t _BIOS_HI = _BIOS_LO + 0x32;
+const uint16_t _BIOS_HI = _BIOS_LO + 0x32U;
 const uint16_t _DPBASE = _BIOS_HI + 1; //DPB
 //TRANS, 0000H
 //0000H, 0000H

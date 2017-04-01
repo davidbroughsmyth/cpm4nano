@@ -30,7 +30,8 @@
 */
 
 //TO DO
-const uint8_t RAM_SIZE = 32;//RAM Size, KBytes
+const uint8_t MEM_SIZE = 64;//Memory Size, KBytes
+const uint8_t RAM_SIZE = 32;//RAM Size for CP/M, KBytes
 #include <avr/pgmspace.h>
 #include "Sd2Card.h"
 //include "TEST.h"
@@ -161,7 +162,6 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
   SpiRam.write_byte(adr, char(dat));
   delayMicroseconds(SPIRAM_DELAY_US);
 }
-
 //---------------------------------------------------
 //debug
 uint16_t breakpoint = 0xFFFF;
@@ -329,7 +329,7 @@ void setup() {
   }
   //SD card init
   do {
-    card.init(SPI_FULL_SPEED, SS_SD_pin);
+    card.init(SPI_HALF_SPEED, SS_SD_pin);
     _cardsize = card.cardSize();
     if (_cardsize !=0) {
       Serial.println(F("Card size: "));
@@ -342,11 +342,9 @@ void setup() {
   } while (_cardsize == 0);
   //RAM test
   Serial.print(F("RAM test..."));
-  Serial.println(RAM_SIZE);
-  Serial.println(RAM_SIZE*1024U);
   //RAM write
   j = 0;
-  for (i = 0; i < (RAM_SIZE*1024U) ; i++) {
+  for (i = 0; i < (MEM_SIZE*1024L) ; i++) {
     _setMEM(i, pgm_read_byte_near(memtest_table+j));
     if ((i % 16384) == 0) {
       Serial.println("");
@@ -361,7 +359,7 @@ void setup() {
   }
   //RAM read
   j = 0;
-  for (i = 0; i < RAM_SIZE*1024U; i++) {
+  for (i = 0; i < MEM_SIZE*1024L; i++) {
     if ((i % 16384) == 0) {
       Serial.println("");
     }
@@ -387,7 +385,7 @@ void setup() {
   Serial.println(F(" byte(s) of RAM are available"));
   //RAM clear
   Serial.print(F("RAM clearing..."));
-  for (i = 0; i < RAM_SIZE*1024U; i++) {
+  for (i = 0; i < MEM_SIZE*1024L; i++) {
     _setMEM(i, 0);
     if ((i % 16384) == 0) {
       Serial.println("");

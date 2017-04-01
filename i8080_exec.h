@@ -89,7 +89,7 @@ uint8_t in_port(uint8_t port) {
       //bit 5 - ready to in (Altair)
       dat = 0x02;
       if (Serial.available() > 0) {
-        dat = dat | 0x20;
+        dat = dat | 0xFF;
       }
       break;
     case CON_PORT_DATA:
@@ -156,7 +156,7 @@ void out_port(uint8_t port, uint8_t dat) {
       if (dat == FDD_RD_CMD) {
         //sector read
         //blk = _getMEM(_FDD_SECTOR)-1;
-        blk = FDD_REG_SEC - 1;
+        blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
         switch (FDD_REG_DRV) {
           case 0:
@@ -172,6 +172,8 @@ void out_port(uint8_t port, uint8_t dat) {
             blk = blk +  SD_FDD_D_OFFSET;
             break;
         }
+        //Serial.print("Read block ");
+        //Serial.println(blk, HEX);
         res = readSD(blk, 0);
         if (res == 1) {
           for (i = 0 ; i < SD_BLK_SIZE ; i++) {
@@ -189,7 +191,7 @@ void out_port(uint8_t port, uint8_t dat) {
       if (dat == FDD_WRT_CMD) {
         //sector write
         //blk = _getMEM(_FDD_SECTOR)-1;
-        blk = FDD_REG_SEC - 1;
+        blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
         switch (FDD_REG_DRV) {
           case 0:
@@ -206,11 +208,13 @@ void out_port(uint8_t port, uint8_t dat) {
             break;
         }
         for (i = 0 ; i < SD_BLK_SIZE ; i++) {
-          _dsk_buffer[i] = FDD_REG_DMA + i;
+          _dsk_buffer[i] = _getMEM(FDD_REG_DMA + i);
         }
         for (i = 0; i < SD_BLK_SIZE; i++) {
           _buffer[i] = _dsk_buffer[i];
         }
+        //Serial.print("Write block ");
+        //Serial.println(blk, HEX);
         res = writeSD(blk);
         if (res == 1) {
           FDD_REG_STATUS = true;
@@ -426,7 +430,7 @@ void _I8080_ADD(uint8_t reg) {
   }
   d16 = _Regs[_Reg_A] + d8;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
+  if (d16 > 0xFF) {
     _setFlags_C(1);
   }
   else {
@@ -453,7 +457,7 @@ void _I8080_ADI() {
   }
   d16 = _Regs[_Reg_A] + d8;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
+  if (d16 > 0xFF) {
     _setFlags_C(1);
   }
   else {
@@ -488,7 +492,7 @@ void _I8080_ADC(uint8_t reg) {
     d16 = d16 + 1;
   }
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
+  if (d16 > 0xFF) {
     _setFlags_C(1);
   }
   else {
@@ -519,7 +523,7 @@ void _I8080_ACI() {
     d16 = d16 + 1;
   }
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
+  if (d16 > 0xFF) {
     _setFlags_C(1);
   }
   else {
@@ -546,11 +550,11 @@ void _I8080_SUB(uint8_t reg) {
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
@@ -575,11 +579,11 @@ void _I8080_SUI() {
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
@@ -609,11 +613,11 @@ void _I8080_SBB(uint8_t reg) {
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
@@ -640,11 +644,11 @@ void _I8080_SBI() {
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
   d8 = lowByte(d16);
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
@@ -968,11 +972,11 @@ void _I8080_CMP(uint8_t reg) {
   d8 = d8 ^ 0xFF;
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
     //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));
@@ -995,11 +999,11 @@ void _I8080_CPI() {
   d8 = d8 ^ 0xFF;
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
-  if ((d16 & 0x100)!=0) {
-    _setFlags_C(1);
+  if (d16 > 0xFF) {
+    _setFlags_C(0);
   }
   else {
-    _setFlags_C(0);
+    _setFlags_C(1);
   }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));

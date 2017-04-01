@@ -73,7 +73,9 @@
   Serial.println(_SP, HEX);
   clrlin();
   Serial.print(F("CMD: "));
-  Serial.println(cmd, HEX);
+  Serial.print(cmd, HEX);
+  Serial.print(" ");
+
   clrlin();
   Serial.println(F("Cache:"));
   clrlin();
