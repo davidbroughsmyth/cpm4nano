@@ -84,15 +84,16 @@ uint8_t in_port(uint8_t port) {
   boolean readyFlag=false;
   dat = 0x00;
   switch (port) {
-    case CON_PORT_STATUS:
+    //SIO-A
+    case SIOA_CON_PORT_STATUS:
       //bit 1 - ready to out (Altair)
       //bit 5 - ready to in (Altair)
       dat = 0x02;
       if (Serial.available() > 0) {
-        dat = dat | 0xFF;
+        dat = dat | 0x20;
       }
       break;
-    case CON_PORT_DATA:
+    case SIOA_CON_PORT_DATA:
       //input from console
       do {
         if (Serial.available() > 0) {
@@ -101,6 +102,24 @@ uint8_t in_port(uint8_t port) {
         }
       } while (!readyFlag);
       break;
+    //SIO-2
+    case SIO2_CON_PORT_STATUS:
+      //bit 1 - ready to out (Altair)
+      //bit 0 - ready to in (Altair)
+      dat = 0x02;
+      if (Serial.available() > 0) {
+        dat = dat | 0x01;
+      }
+      break;
+    case SIO2_CON_PORT_DATA:
+      //input from console
+      do {
+        if (Serial.available() > 0) {
+          dat = uint8_t(Serial.read());
+          readyFlag = true;
+        }
+      } while (!readyFlag);
+      break;  
     //FDD ports
     case FDD_PORT_CMD:
       //status
@@ -146,10 +165,16 @@ void out_port(uint8_t port, uint8_t dat) {
   uint32_t blk;
   switch (port) {
     //console ports
-    case CON_PORT_DATA:
+    //SIO-A
+    case SIOA_CON_PORT_DATA:
       //output to console
       Serial.write(dat);
       break;
+    //SIO-2
+    case SIO2_CON_PORT_DATA:
+      //output to console
+      Serial.write(dat);
+      break;  
     //FDD ports
     case FDD_PORT_CMD:
       //command

@@ -87,8 +87,12 @@ const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;
 //----------------------------------------------------
 //console emulation
 //console ports
-const uint8_t CON_PORT_STATUS = 0x00;//status
-const uint8_t CON_PORT_DATA = 0x01;//data
+//SIO-A
+const uint8_t SIOA_CON_PORT_STATUS = 0x00;//status
+const uint8_t SIOA_CON_PORT_DATA = 0x01;//data
+//SIO-2
+const uint8_t SIO2_CON_PORT_STATUS = 0x10;//status
+const uint8_t SIO2_CON_PORT_DATA = 0x11;//data
 //-----------------------------------------------------
 //FDD emulation
 //FDD controller ports
@@ -308,15 +312,15 @@ void setup() {
   sei();
   //logo
   color(2);
-  Serial.println(F("********************************"));
-  Serial.print(F("*  CP/M for Arduino Nano V")); 
+  Serial.println(F("***************************************"));
+  Serial.print(F("*     CP/M for Arduino Nano V")); 
   Serial.print(VER_MAJOR);
   Serial.print(".");
   Serial.print(VER_MINOR);
-  Serial.println(F("  *"));
-  Serial.println(F("*      (C) 2017 FoxyLab        *"));
-  Serial.println(F("*   https://acdc.foxylab.com   *"));
-  Serial.println(F("********************************"));
+  Serial.println(F("      *"));
+  Serial.println(F("* (C) 2017 Alexey V.Voronin @ FoxyLab *"));
+  Serial.println(F("*      https://acdc.foxylab.com       *"));
+  Serial.println(F("***************************************"));
   Serial.println("");
   //cache init
   for (i = 0; i < CACHE_LINES_NUM; i++) {

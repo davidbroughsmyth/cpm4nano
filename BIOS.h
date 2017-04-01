@@ -17,7 +17,7 @@ const uint16_t CPM_SERIAL_LEN = 6;
 uint32_t blk;
 
 void _charOut(uint8_t c) {
-    out_port(CON_PORT_DATA, c);
+    out_port(SIOA_CON_PORT_DATA, c);
 }
 
 void _BIOS_RET() {
@@ -43,6 +43,8 @@ boolean _IPL() {
   uint8_t res;
   uint8_t d8;
   boolean success = false;
+  Serial.print(RAM_SIZE, DEC);
+  Serial.println("K SYSTEM");
   Serial.print("CBASE: ");
   Serial.write(0x09);
   Serial.println(CBASE, HEX); 
@@ -55,13 +57,13 @@ boolean _IPL() {
   Serial.print(" ... ");
   Serial.println(_BIOS_HI, HEX);  
   _SP = SP_INIT;
-  out_port(CON_PORT_DATA, 0x0D);  
-  out_port(CON_PORT_DATA, 0x0A);
-  out_port(CON_PORT_DATA, 'I');
-  out_port(CON_PORT_DATA, 'P');
-  out_port(CON_PORT_DATA, 'L');
-  out_port(CON_PORT_DATA, 0x0D);
-  out_port(CON_PORT_DATA, 0x0A);
+  out_port(SIOA_CON_PORT_DATA, 0x0D);  
+  out_port(SIOA_CON_PORT_DATA, 0x0A);
+  out_port(SIOA_CON_PORT_DATA, 'I');
+  out_port(SIOA_CON_PORT_DATA, 'P');
+  out_port(SIOA_CON_PORT_DATA, 'L');
+  out_port(SIOA_CON_PORT_DATA, 0x0D);
+  out_port(SIOA_CON_PORT_DATA, 0x0A);
   FDD_REG_DRV = 0;
   FDD_REG_TRK = 0;
   FDD_REG_SEC = 1;
@@ -77,7 +79,7 @@ boolean _IPL() {
           _setMEM(CBASE+i+k+j*512, _dsk_buffer[i]);
         }   
       }  
-      out_port(CON_PORT_DATA, '.');
+      out_port(SIOA_CON_PORT_DATA, '.');
   }
   
   //checksum checking
@@ -87,28 +89,28 @@ boolean _IPL() {
         checksum = checksum + d8;
       }
   }
-  out_port(CON_PORT_DATA, 0x0D);  
-  out_port(CON_PORT_DATA, 0x0A);
+  out_port(SIOA_CON_PORT_DATA, 0x0D);  
+  out_port(SIOA_CON_PORT_DATA, 0x0A);
   Serial.print(F("Checksum: "));
   sprintf(hex, "%02X", checksum);
   Serial.print(hex);
   Serial.print(" ");
   if (checksum != CPMSYS_CS) {
-     out_port(CON_PORT_DATA, 'E');
-     out_port(CON_PORT_DATA, 'R');
-     out_port(CON_PORT_DATA, 'R');
-     out_port(CON_PORT_DATA, '!');
-     out_port(CON_PORT_DATA, 0x0D);  
-     out_port(CON_PORT_DATA, 0x0A);
+     out_port(SIOA_CON_PORT_DATA, 'E');
+     out_port(SIOA_CON_PORT_DATA, 'R');
+     out_port(SIOA_CON_PORT_DATA, 'R');
+     out_port(SIOA_CON_PORT_DATA, '!');
+     out_port(SIOA_CON_PORT_DATA, 0x0D);  
+     out_port(SIOA_CON_PORT_DATA, 0x0A);
      success = false;
   }
   else {
-     out_port(CON_PORT_DATA, 'O');
-     out_port(CON_PORT_DATA, '.');
-     out_port(CON_PORT_DATA, 'K');
-     out_port(CON_PORT_DATA, '.');
-     out_port(CON_PORT_DATA, 0x0D);  
-     out_port(CON_PORT_DATA, 0x0A);
+     out_port(SIOA_CON_PORT_DATA, 'O');
+     out_port(SIOA_CON_PORT_DATA, '.');
+     out_port(SIOA_CON_PORT_DATA, 'K');
+     out_port(SIOA_CON_PORT_DATA, '.');
+     out_port(SIOA_CON_PORT_DATA, 0x0D);  
+     out_port(SIOA_CON_PORT_DATA, 0x0A);
      success = true;
 
      for(j=CPM_LBL_START;j<(CPM_LBL_START+CPM_LBL_LEN);j++) {
@@ -203,14 +205,14 @@ void _GOCPM(boolean jmp) {
 
 void _BOOT() {
     //message BOOT
-    out_port(CON_PORT_DATA, 0x0D);
-    out_port(CON_PORT_DATA, 0x0A);
-    out_port(CON_PORT_DATA, 'B');
-    out_port(CON_PORT_DATA, 'O');
-    out_port(CON_PORT_DATA, 'O');
-    out_port(CON_PORT_DATA, 'T');
-    out_port(CON_PORT_DATA, 0x0D);
-    out_port(CON_PORT_DATA, 0x0A);
+    out_port(SIOA_CON_PORT_DATA, 0x0D);
+    out_port(SIOA_CON_PORT_DATA, 0x0A);
+    out_port(SIOA_CON_PORT_DATA, 'B');
+    out_port(SIOA_CON_PORT_DATA, 'O');
+    out_port(SIOA_CON_PORT_DATA, 'O');
+    out_port(SIOA_CON_PORT_DATA, 'T');
+    out_port(SIOA_CON_PORT_DATA, 0x0D);
+    out_port(SIOA_CON_PORT_DATA, 0x0A);
     //IOBYTE clear
     _setMEM(IOBYTE, 0x00);
     //select disk 0
@@ -222,15 +224,15 @@ void _BOOT() {
 void _WBOOT() {
   boolean load;
     //message WBOOT
-    out_port(CON_PORT_DATA, 0x0D);
-    out_port(CON_PORT_DATA, 0x0A);
-    out_port(CON_PORT_DATA, 'W');
-    out_port(CON_PORT_DATA, 'B');
-    out_port(CON_PORT_DATA, 'O');
-    out_port(CON_PORT_DATA, 'O');
-    out_port(CON_PORT_DATA, 'T');
-    out_port(CON_PORT_DATA, 0x0D);
-    out_port(CON_PORT_DATA, 0x0A);
+    out_port(SIOA_CON_PORT_DATA, 0x0D);
+    out_port(SIOA_CON_PORT_DATA, 0x0A);
+    out_port(SIOA_CON_PORT_DATA, 'W');
+    out_port(SIOA_CON_PORT_DATA, 'B');
+    out_port(SIOA_CON_PORT_DATA, 'O');
+    out_port(SIOA_CON_PORT_DATA, 'O');
+    out_port(SIOA_CON_PORT_DATA, 'T');
+    out_port(SIOA_CON_PORT_DATA, 0x0D);
+    out_port(SIOA_CON_PORT_DATA, 0x0A);
     //USE SPACE BELOW BUFFER FOR STACK
     _SP = 0x80;
     do {
@@ -251,7 +253,7 @@ void _BIOS_WBOOT() {
 
 
 void _BIOS_CONST() {
-     if ((in_port(CON_PORT_STATUS) & 0x20)!=0) {
+     if ((in_port(SIOA_CON_PORT_STATUS) & 0x20)!=0) {
           _Regs[_Reg_A] = 0xFF;
      }
      else {
@@ -262,7 +264,7 @@ void _BIOS_CONST() {
 
 
 void _BIOS_CONIN() {
-      _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
+      _Regs[_Reg_A] = in_port(SIOA_CON_PORT_DATA) & B01111111;
       _BIOS_RET();
 }
 
@@ -282,9 +284,9 @@ void _BIOS_PUNCH() {
 
 void _BIOS_READER() {
       bool flag = false;
-      _Regs[_Reg_A] = in_port(CON_PORT_DATA) & B01111111;
+      _Regs[_Reg_A] = in_port(SIOA_CON_PORT_DATA) & B01111111;
        //ACK sent
-       out_port(CON_PORT_DATA, ACK);
+       out_port(SIOA_CON_PORT_DATA, ACK);
       _BIOS_RET();    
 }
 
