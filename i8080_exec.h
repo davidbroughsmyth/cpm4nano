@@ -674,7 +674,13 @@ void _I8080_INR(uint8_t reg) {
     d8 = _Regs[reg];
   }
   d8++;
-  _Regs[reg] = d8;
+  if (reg == _Reg_M)
+  {
+     _setMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]),d8);
+  }
+  else {
+    _Regs[reg] = d8;
+  }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
@@ -700,7 +706,13 @@ void _I8080_DCR(uint8_t reg) {
     d8 = _Regs[reg];
   }
   d8--;
-  _Regs[reg] = d8;
+  if (reg == _Reg_M)
+  {
+     _setMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]), d8);
+  }
+  else {
+    _Regs[reg] = d8;
+  }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
