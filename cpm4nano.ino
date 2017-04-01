@@ -75,7 +75,7 @@ const uint32_t SD_MEM_OFFSET = 0x000400;
 boolean MEM_ERR = false;
 //----------------------------------------------------
 //cache
-const uint8_t CACHE_LINE_POW = 6;
+const uint8_t CACHE_LINE_POW = 6;//2^6 = 64 bytes
 const uint8_t CACHE_LINE_SIZE = 1 << CACHE_LINE_POW;//128 byte max
 const uint8_t CACHE_LINES_NUM = 8;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
@@ -167,6 +167,7 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
 uint16_t breakpoint = 0xFFFF;
 boolean breakpointFlag = false;
 bool exitFlag = false;
+char hex[2];
 //-----------------------------------------------------
 //keyboard monitor procedures
 char inChar;

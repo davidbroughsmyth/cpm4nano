@@ -9,6 +9,10 @@
 
 //I/O devices flag
 const uint8_t ACK = 0x06;
+const uint16_t CPM_LBL_START = 0x18;
+const uint16_t CPM_LBL_LEN = 36;
+const uint16_t CPM_SERIAL_START = 0x328;
+const uint16_t CPM_SERIAL_LEN = 6;
 
 uint32_t blk;
 
@@ -40,10 +44,13 @@ boolean _IPL() {
   uint8_t d8;
   boolean success = false;
   Serial.print("CBASE: ");
+  Serial.write(0x09);
   Serial.println(CBASE, HEX); 
   Serial.print("FBASE: ");
+  Serial.write(0x09);
   Serial.println(FBASE, HEX);
   Serial.print("BIOS: ");
+  Serial.write(0x09);
   Serial.print(_BIOS_LO, HEX);
   Serial.print(" ... ");
   Serial.println(_BIOS_HI, HEX);  
@@ -83,7 +90,9 @@ boolean _IPL() {
   out_port(CON_PORT_DATA, 0x0D);  
   out_port(CON_PORT_DATA, 0x0A);
   Serial.print(F("Checksum: "));
-  Serial.println(checksum, HEX);
+  sprintf(hex, "%02X", checksum);
+  Serial.print(hex);
+  Serial.print(" ");
   if (checksum != CPMSYS_CS) {
      out_port(CON_PORT_DATA, 'E');
      out_port(CON_PORT_DATA, 'R');
@@ -101,6 +110,17 @@ boolean _IPL() {
      out_port(CON_PORT_DATA, 0x0D);  
      out_port(CON_PORT_DATA, 0x0A);
      success = true;
+
+     for(j=CPM_LBL_START;j<(CPM_LBL_START+CPM_LBL_LEN);j++) {
+        Serial.write(_getMEM(CBASE+j));
+     }
+     Serial.println("");
+     Serial.print(F("Serial: "));
+     for(j=CPM_SERIAL_START;j<(CPM_SERIAL_START+CPM_SERIAL_LEN);j++) {
+        sprintf(hex, "%02X", _getMEM(CBASE+j));
+        Serial.print(hex);
+     }
+     Serial.println("");
   
     i = 0;
     i = i + _DPBASE;      
