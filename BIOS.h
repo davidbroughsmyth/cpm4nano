@@ -283,10 +283,6 @@ void _BIOS_PUNCH() {
 }
 
 void _BIOS_READER() {
-<<<<<<< HEAD
-=======
-      bool flag = false;
->>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
       _Regs[_Reg_A] = in_port(SIOA_CON_PORT_DATA) & B01111111;
        //ACK sent
        out_port(SIOA_CON_PORT_DATA, ACK);

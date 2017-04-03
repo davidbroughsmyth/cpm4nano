@@ -107,24 +107,15 @@ uint8_t in_port(uint8_t port) {
       //bit 1 - ready to out (Altair)
       //bit 0 - ready to in (Altair)
       dat = 0x02;
-<<<<<<< HEAD
       if (con_ready()) {
-=======
-      if (Serial.available() > 0) {
->>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
         dat = dat | 0x01;
       }
       break;
     case SIO2_CON_PORT_DATA:
       //input from console
       do {
-<<<<<<< HEAD
         if (con_ready()) {
           dat = uint8_t(con_read());
-=======
-        if (Serial.available() > 0) {
-          dat = uint8_t(Serial.read());
->>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
           readyFlag = true;
         }
       } while (!readyFlag);
