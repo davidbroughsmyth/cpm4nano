@@ -488,7 +488,7 @@ ISR(TIMER1_COMPA_vect) {
     }
   }
   //serial monitoring
-  while (Serial.available() > 0) {
+  if (Serial.available() > 0) {
     key = Serial.read();
     //chars count increment
     if ((con_chars + 1) < CON_BUFFER_SIZE) {

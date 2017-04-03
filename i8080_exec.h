@@ -878,19 +878,22 @@ void _I8080_ANA(uint8_t reg) {
   {
     d8 = _Regs[reg];
   }
-  if (((_Regs[_Reg_A] | d8) & 0x08) != 0) {
+  //8080 - CY = 0, AC = bits 3 _Regs[_Reg_A] OR d8
+  _setFlags_C(0);
+  //setFlags_A(0);
+    if ( ((_Regs[_Reg_A] & B1000) | (d8 & B1000)) != 0) {
     _setFlags_A(1);
   }
   else
   {
     _setFlags_A(0);
   }
+  //8085 - CY = 0, AC = 1
   d8 = d8 & _Regs[_Reg_A];
   _Regs[_Reg_A] = d8;
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
-  _setFlags_C(0);
   _PC++;
 }
 
@@ -899,7 +902,10 @@ void _I8080_ANI() {
   uint8_t d8;
   _PC++;
   d8 = _getMEM(_PC);
-  if (((_Regs[_Reg_A] | d8) & 0x08) != 0) {
+  //8080 - CY = 0, AC = bits 3 _Regs[_Reg_A] OR d8
+  _setFlags_C(0);
+  //_setFlags_A(0);
+    if ( ((_Regs[_Reg_A] & B1000) | (d8 & B1000)) != 0) {
     _setFlags_A(1);
   }
   else
@@ -911,7 +917,6 @@ void _I8080_ANI() {
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
-  _setFlags_C(0);
   _PC++;
 }
 
@@ -931,6 +936,7 @@ void _I8080_ORA(uint8_t reg) {
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
+  //CY = 0, AC = 0
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -946,6 +952,7 @@ void _I8080_ORI() {
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
+  //CY = 0, AC = 0
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -967,6 +974,7 @@ void _I8080_XRA(uint8_t reg) {
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
+  //CY = 0, AC = 0
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -982,6 +990,7 @@ void _I8080_XRI() {
   //flags
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
+  //CY = 0, AC = 0
   _setFlags_C(0);
   _setFlags_A(0);
   _PC++;
@@ -997,15 +1006,15 @@ void _I8080_CMP(uint8_t reg) {
   else {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
   }
+  if (_Regs[_Reg_A] < d8) {
+    _setFlags_C(1);
+  }
+  else {
+    _setFlags_C(0);
+  }
   d8 = d8 ^ 0xFF;
   d16 = d8 + 1;
   d16 = _Regs[_Reg_A] + d16;
-  if (d16 > 0xFF) {
-    _setFlags_C(0);
-  }
-  else {
-    _setFlags_C(1);
-  }
     //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
