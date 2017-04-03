@@ -1,0 +1,20 @@
+; BASIC VERSION 3.2
+; [4K VERSION]
+set cpu 8080
+set cpu noitrap
+set sio ansi
+set sio upper
+set cpu altairrom
+l 4kbas32.bin 0
+d sr 8
+g 0
+;	MEMORY SIZE?
+;	TERMINAL WIDTH?
+;	WANT SIN? Y
+;
+;	61911 BYTES FREE
+;
+;	BASIC VERSION 3.2
+;	[4K VERSION]
+;
+;	OK

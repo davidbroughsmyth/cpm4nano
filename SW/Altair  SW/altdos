@@ -1,0 +1,51 @@
+set cpu 8080
+set cpu mmu
+set cpu noitrap
+set sio ansi
+set cpu 64k
+set cpu nonbanked
+set dsk en
+d tracks[0-7] 77
+attach dsk0 altdos.dsk
+attach dsk1 altdos2.dsk
+set sio upper
+set sio sleep
+att sio altdosin.txt
+set cpu altairrom
+boot dsk
+;   MEMORY SIZE?           <ret>
+;   INTERRUPTS?            <ret>
+;   HIGHEST DISK NUMBER?   <1>  
+;   HOW MANY DISK FILES?   <4>
+;   HOW MANY RANDOM FILES? <4>
+;
+;   057377 BYTES AVAILABLE
+;   DOS MONITOR VER 1.0
+;   COPYRIGHT 1977 BY MITS INC
+;   .
+;
+; Type MNT 0 to mount a disk and
+; Type DIR 0 to show its directory
+;
+; Usage of the FORTRAN compiler
+; .<MNT 0>                          Make disk 0 available (mount)
+; .<EDIT FTEST 0>                   Edit FTEST
+; *<P>                              Show the program
+; *<Q>                              Quit editor without changes (D nnn to delete line
+;                                   nnn, I nnn to insert)
+; .<F80>                            Start the FORTRAN compiler
+; *<=&FTEST>                        Compile FTEST
+; <^E and reboot>                   Restart the computer to terminate F80
+; .<MNT 0>                          Make disk 0 available (mount)
+; .<L80>                            Start the linker
+; *<&FTES>                          Note that the name of the REL file is FTES not FTEST
+; *<FORLB/S>                        Search the FORTRAN runtime library
+; */E>                              Exit the linker
+; .<SAV FTEST 0>                    Save the result
+; ENTER LOW ADDRESS <017100>        First number from "Data    017100  031764"
+; ENTER HIGH ADDRESS <031764>       Second number from "[017111 031764  22]"
+; ENTER START ADDRESS <017111>      First number from "[017111 031764  22]"
+; .<FTEST>                          Start the program
+;
+; Copy files with COP
+; Use fds when asked for DEVICE TYPE

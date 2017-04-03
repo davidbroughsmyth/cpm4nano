@@ -25,7 +25,6 @@ import (
     "io/ioutil"
     "fmt"
     "github.com/jacobsa/go-serial/serial"
-    "time"	
     "os"
 )
 
@@ -88,6 +87,7 @@ func main() {
 	//ACK wait
 	for {
 		buf := make([]byte, 1)
+		buf[0] = 0xFF
 		n,err = comport.Read(buf)	
 		if err == nil {
 			if n > 0 {

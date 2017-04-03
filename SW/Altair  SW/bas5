@@ -1,0 +1,30 @@
+reset cpu
+set cpu 8080
+set cpu noitrap
+set sio ansi
+set sio upper
+set cpu altairrom
+d tracks[0-7] 77
+at dsk extbas5.dsk
+d sr 8
+g 0
+;	MEMORY SIZE? 
+;	LINEPRINTER? C
+;	HIGHEST DISK NUMBER? 0
+;	HOW MANY FILES? 3
+;	HOW MANY RANDOM FILES? 2
+;	
+;	42339 BYTES FREE
+;	
+;	ALTAIR DISK EXTENDED BASIC
+;	VERSION 300-5-C [01NOV78]
+;	COPYRIGHT 1978 BY MITS INC.
+;	
+;	OK
+;	MOUNT 0
+;	OK
+;	FILES
+;	PIP       STARTREK  
+;	OK
+;	LOAD "STARTREK"
+;	OK

@@ -12,26 +12,33 @@
   xy(0,0);
   clrlin();
   Serial.print("A:");
-  Serial.print(_Regs[_Reg_A], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_A]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("B:");
-  Serial.print(_Regs[_Reg_B], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_B]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("C:");
-  Serial.print(_Regs[_Reg_C], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_C]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("D:");
-  Serial.print(_Regs[_Reg_D], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_D]);
+  Serial.print(hex);
   Serial.println("   ");
   clrlin();
   Serial.print("E:");
-  Serial.print(_Regs[_Reg_E], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_E]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("H:");
-  Serial.print(_Regs[_Reg_H], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_H]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("L:");
-  Serial.print(_Regs[_Reg_L], HEX);
+  sprintf(hex, "%02X", _Regs[_Reg_L]);
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print("F: ");
   if (_getFlags_S()==1) {
@@ -67,21 +74,20 @@
   Serial.println("   ");
   clrlin();
   Serial.print(F("PC:"));
-  Serial.print(_PC, HEX);
+  sprintf(hex, "%02X", highByte(_PC));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_PC));
+  Serial.print(hex);
   Serial.print("   ");
   Serial.print(F("SP:"));
-  Serial.println(_SP, HEX);
+  sprintf(hex, "%02X", highByte(_SP));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_SP));
+  Serial.println(hex);
   clrlin();
   Serial.print(F("CMD: "));
-  Serial.println(cmd, HEX);
-  clrlin();
-  Serial.println(F("Cache:"));
-  clrlin();
-  for(i=0;i<CACHE_LINES_NUM;i++) {
-    clrlin();
-    Serial.println((cache_tag[i]-SD_MEM_OFFSET)*CACHE_LINE_SIZE,HEX);  
-  }
-  clrlin();
+  sprintf(hex, "%02X", cmd);
+  Serial.print(hex);
   Serial.println("");
   clrlin();
   Serial.println(F("Press SPACE to continue, CTRL-C to break"));
@@ -89,8 +95,8 @@
   inChar = '\0';
   do
   {
-    if (Serial.available() > 0) {
-          inChar = Serial.read();
+    if (con_ready()) {
+          inChar = con_read();
     }
   } while ((inChar != ' ') && (inChar != CTRL_C_KEY));
   loadcur();

@@ -10,7 +10,7 @@
     clrarea();//clear work area
     
     //LXXXXYY - load byte to memory
-    if (KbdBuffer[0]=='L') {
+    if (mon_buffer[0]=='L') {
       if (hexcheck(1,6)) {
         adr = kbd2word(1);
         dat = kbd2byte(5);
@@ -24,7 +24,7 @@
     }
 
     //DXXXX - dump byte from memory
-    if (KbdBuffer[0]=='D') {
+    if (mon_buffer[0]=='D') {
         if (hexcheck(1,4)) {
           adr = kbd2word(1);
           dat = _getMEM(adr);
@@ -38,7 +38,7 @@
     }
 
     //OXXYY - send byte to port
-    if (KbdBuffer[0]=='O') {
+    if (mon_buffer[0]=='O') {
       if (hexcheck(1,4)) {
         port = kbd2byte(1);
         dat = kbd2byte(3);
@@ -52,7 +52,7 @@
     }
 
     //IXX - read byte from port
-    if (KbdBuffer[0]=='I') {
+    if (mon_buffer[0]=='I') {
         if (hexcheck(1,2)) {
           port = kbd2byte(1);
           dat = in_port(port);
@@ -66,7 +66,7 @@
     }
 
     //F - load Intel HEX file to memory
-    if (KbdBuffer[0]=='F') {  
+    if (mon_buffer[0]=='F') {  
     Serial.println(F("Ready to receive the HEX file..."));  
     error = false;
     _EOF = false;
@@ -76,8 +76,8 @@
     hex_type = 0;
     do {
       inChar = '\0';
-      if (Serial.available() > 0) {
-        inChar = Serial.read();       
+      if (con_ready()) {
+        inChar = con_read();       
         switch (hex_count) {
           case 0://:
               // : waiting
@@ -179,6 +179,9 @@
           }
           Serial.write(0x06);//ACK
       }
+      else {
+        delay(10);
+      }
     } while ((!_EOF) && (!error));
     if (!error) {
       Serial.println("");
@@ -189,7 +192,7 @@
            
 
     //TXXXX - load text file to memory (0x1A - EOF)
-    if (KbdBuffer[0]=='T') {  
+    if (mon_buffer[0]=='T') {  
     if (hexcheck(1,4)) {
     Serial.println(F("Ready to receive the text file..."));  
     _EOF = false;
@@ -197,8 +200,8 @@
     count=0;
      do {
       inChar = '\0';
-      if (Serial.available() > 0) {
-        inChar = Serial.read();       
+      if (con_ready()) {
+        inChar = con_read();       
         count++;
         dat = uint8_t(inChar);
         _setMEM(adr, dat);
@@ -208,6 +211,9 @@
           _EOF = true;
         }
         Serial.write(0x06);//ACK send
+      }
+      else {
+        delay(10);
       }
      } while (!_EOF);   
      Serial.println("");
@@ -221,27 +227,30 @@
     } 
 
     //BXXXX - load binary file to memory
-    if (KbdBuffer[0]=='B') {  
+    if (mon_buffer[0]=='B') {  
     if (hexcheck(1,4)) {
     adr = kbd2word(1);
     tmp_word = adr;
+    con_flush();
     Serial.println(F("Ready to receive the binary file..."));
     Serial.print(F("Address: "));
     Serial.print(adr, HEX);  
     _EOF = false;
-    while (Serial.available() == 0) {
+    while (!con_ready()) {
+      delay(10);
     }
-    inChar = Serial.read();    
+    inChar = con_read();    
     len=uint8_t(inChar);
-    while (Serial.available() == 0) {
+    while (!con_ready()) {
+      delay(10);
     }
-    inChar = Serial.read();    
+    inChar = con_read();    
     len=uint8_t(inChar)*256+len; 
     count=0;
     do {
       inChar = '\0';
-      if (Serial.available() > 0) {
-        inChar = Serial.read();       
+      if (con_ready()) {
+        inChar = con_read();       
         dat = uint8_t(inChar);
         _setMEM(adr, dat);
         adr++;
@@ -252,11 +261,15 @@
         }
         Serial.write(0x06);//ACK send
       }
+      else {
+        delay(10);
+      }
      } while (!_EOF);        
      //crc receive
-     while (Serial.available() == 0) {
-     }
-     inChar = Serial.read();    
+     while (!con_ready()) {
+      delay(10);
+    }
+     inChar = con_read();    
      crc=uint8_t(inChar);
      //crc calculation
      tmp_byte=0;
@@ -281,7 +294,7 @@
     }
 
     //M - Debug Mode on/off
-    if (KbdBuffer[0]=='M') {
+    if (mon_buffer[0]=='M') {
       DEBUG = !DEBUG;
       if (DEBUG) {
         Serial.println(F("Debug ON"));
@@ -293,7 +306,7 @@
     }
 
     //QXXXX - set breakpoint
-    if (KbdBuffer[0]=='Q') {
+    if (mon_buffer[0]=='Q') {
       if (hexcheck(1,4)) {
       byte res;
       adr = kbd2word(1);
@@ -315,7 +328,7 @@
     }
 
     //Z - Z80 Emulation On/Off
-    if (KbdBuffer[0]=='Z') {
+    if (mon_buffer[0]=='Z') {
       Z80 = !Z80;
       if (Z80) {
         Serial.println(F("Z80 Emulation ON"));
@@ -327,7 +340,7 @@
     }
 
     //GXXXX - run
-    if (KbdBuffer[0]=='G') {
+    if (mon_buffer[0]=='G') {
       if (hexcheck(1,4)) {
       adr = kbd2word(1);
       clrarea();
@@ -343,11 +356,11 @@
     //disk operations
 
     //S - sector print
-    if (KbdBuffer[0]=='S') {
+    if (mon_buffer[0]=='S') {
       uint16_t i;
-      byte res;
+      uint8_t res;
       adr = kbd2word(2);
-      switch (KbdBuffer[1]) {
+      switch (mon_buffer[1]) {
         case 'A': adr = adr + SD_FDD_A_OFFSET;
                   break;
         case 'B': adr = adr + SD_FDD_B_OFFSET;
@@ -368,11 +381,12 @@
     }
 
     //X - format disk
-    if (KbdBuffer[0]=='X') {
+    if (mon_buffer[0]=='X') {
       uint8_t diskno;
       uint32_t start;
+      uint8_t res;
       diskno = 0xFF;
-      switch (KbdBuffer[1]) {
+      switch (mon_buffer[1]) {
         case 'A': diskno = 0;
              break;
         case 'B': diskno = 1;
@@ -402,13 +416,13 @@
                   break;
         }
         for (uint32_t i = 0; i<SD_BLK_SIZE; i++) {
-          _buffer[i] = CPM_EMPTY;
+          _dsk_buffer[i] = CPM_EMPTY;
         }
         for (uint32_t i = 0; i<DISK_SIZE*TRACK_SIZE; i++) {
           Serial.print('\r');
           Serial.print(F("Sector "));
           Serial.print(i,DEC);
-          writeSD(i+start);
+          res = card.writeBlock(i+start, _dsk_buffer);
         }
         Serial.println("");
       }
@@ -417,7 +431,7 @@
     }
 
     //C - load CP/M
-    if (KbdBuffer[0]=='C') {
+    if (mon_buffer[0]=='C') {
       DEBUG = false;//debug off 
       clrscr();//clear screen
       while (!_IPL()) {};//initial loader
@@ -425,6 +439,11 @@
       call(_BIOS);//JMP TO BIOS
       DEBUG = true;//debug on
       goto MON_END;
+    }
+
+    //R - reset
+    if (mon_buffer[0]=='R') {
+      sys_reset();
     }
 
 MON_INVALID:

@@ -30,73 +30,73 @@
     color(9);
     }
     switch (_PC) {
-      case _BIOS + 0://BOOT
+      case _BIOS + 0U://BOOT
         _BIOS_BOOT();
         exe_flag = false;
         break;
-      case _BIOS + 3://WBOOT
+      case _BIOS + 3U://WBOOT
         _BIOS_WBOOT();
         exe_flag = false;
         break;
       //ASCII 7 ‚ 0
       //CTRL-Z 0x1A
-      case _BIOS + 6://CONST
+      case _BIOS + 6U://CONST
         _BIOS_CONST();
         exe_flag = false;
         break;
-      case _BIOS + 9://CONIN
+      case _BIOS + 9U://CONIN
         _BIOS_CONIN();
         exe_flag = false;
         break;
-      case _BIOS + 0xc://CONOUT
+      case _BIOS + 0xcU://CONOUT
         _BIOS_CONOUT();
         exe_flag = false;
         break;
-      case _BIOS + 0xf://LIST
+      case _BIOS + 0xfU://LIST
         _BIOS_LIST();
         exe_flag = false;
         break;
-      case _BIOS + 0x12://PUNCH
+      case _BIOS + 0x12U://PUNCH
         _BIOS_PUNCH();
         exe_flag = false;
         break;
-      case _BIOS + 0x15://READER 
+      case _BIOS + 0x15U://READER 
         _BIOS_READER();
         exe_flag = false;
         break;
-      case _BIOS + 0x2d://LISTST
+      case _BIOS + 0x2dU://LISTST
         _BIOS_LISTST();
         exe_flag = false;
         break;
-      case _BIOS + 0x18://HOME
+      case _BIOS + 0x18U://HOME
         _BIOS_HOME();
         exe_flag = false;
         break;
-      case _BIOS + 0x1b://SELDSK
+      case _BIOS + 0x1bU://SELDSK
         _BIOS_SELDSK();
         exe_flag = false;
         break;
-      case _BIOS + 0x1e://SETTRK
+      case _BIOS + 0x1eU://SETTRK
         _BIOS_SETTRK();
         exe_flag = false;
         break;
-      case _BIOS + 0x21://SETSEC
+      case _BIOS + 0x21U://SETSEC
         _BIOS_SETSEC();
         exe_flag = false;
         break;
-      case _BIOS + 0x24://SETDMA
+      case _BIOS + 0x24U://SETDMA
         _BIOS_SETDMA();
         exe_flag = false;
         break;
-      case _BIOS + 0x27://READ
+      case _BIOS + 0x27U://READ
         _BIOS_READ();
         exe_flag = false;
         break;
-      case _BIOS + 0x2a://WRITE
+      case _BIOS + 0x2aU://WRITE
         _BIOS_WRITE();
         exe_flag = false;
         break;
-      case _BIOS + 0x30://SECTRAN
+      case _BIOS + 0x30U://SECTRAN
         _BIOS_SECTRAN();
         exe_flag = false;
         break;

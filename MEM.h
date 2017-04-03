@@ -9,10 +9,13 @@ uint8_t _getMEM(uint16_t adr) {
   uint32_t blk_tmp;
   uint16_t start_tmp;
   uint16_t i;
-  uint16_t j;
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
+  //RAM mode set
+  //RAM_MODE = 1;//SPI RAM
+  RAM_MODE = 0;//SD Card
+  //RAM get/set
   switch (RAM_MODE) {
     case 0: //SD Card
         blk = adr >> CACHE_LINE_POW; 
@@ -82,7 +85,7 @@ uint8_t _getMEM(uint16_t adr) {
         x = cache[cache_start[sel_blk] + adr];//read from cache
         break;
     case 1: //SPI SRAM
-
+        x = readSPIRAM(adr);
         break;
     case 2: //on-board RAM
         
@@ -96,10 +99,13 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   uint32_t blk_tmp;
   uint16_t start_tmp;
   uint16_t i;
-  uint16_t j;
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
+  //RAM mode set
+  //RAM_MODE = 1;//SPI RAM
+  RAM_MODE = 0;//SD Card
+  //RAM get/set
   switch (RAM_MODE) {
     case 0: //SD Card
         blk = adr >> CACHE_LINE_POW; 
@@ -169,7 +175,7 @@ void _setMEM(uint16_t adr, uint8_t  x) {
         cache_dirty[sel_blk] = true;
         break;
     case 1: //SPI SRAM
-
+        writeSPIRAM(adr,x);
         break;
     case 2: //on-board RAM
         //

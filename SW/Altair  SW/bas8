@@ -1,0 +1,18 @@
+reset cpu
+set cpu 8080
+set cpu noitrap
+set cpu altairrom
+set sio ansi
+set sio upper
+l 8kbas.bin 0
+d sr 8
+g 0
+;	MEMORY SIZE? 
+;	TERMINAL WIDTH? 
+;	WANT SIN-COS-TAN-ATN? Y
+;
+;	58756 BYTES FREE
+;	ALTAIR BASIC REV. 4.0
+;	[EIGHT-K VERSION]
+;	COPYRIGHT 1976 BY MITS INC.
+;	OK

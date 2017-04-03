@@ -1,0 +1,11 @@
+d tracks[0-7] 77
+attach dsk altcpm.dsk
+set cpu altairrom
+boot dsk
+;	62K CP/M VERSION 2.2 (ALTAIR 8800)
+;	A>dir
+;	A: STAT     COM : PIP      COM : ED       COM : DDT      COM
+;	A: ASM      COM : LOAD     COM : SUBMIT   COM : XSUB     COM
+;	A: MOVCPM   COM : COPY     COM : FORMAT   COM : DUMP     COM
+;	A: SYSGEN   SUB : DUMP     ASM : CBIOS    ASM : PTD      ASM
+;	A: LS       COM : CPM62    COM : SURVEY   COM : ABOOT62  ASM

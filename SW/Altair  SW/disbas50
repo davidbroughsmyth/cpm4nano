@@ -1,0 +1,28 @@
+reset cpu
+set cpu 8080
+set sio upper
+set sio ansi
+set cpu altairrom
+d tracks[0-7] 77
+at dsk disbas50.dsk
+d sr 8
+load disbas50.bin 0
+g 0
+;	MEMORY SIZE?
+;	LINEPRINTER? C
+;	HIGHEST DISK NUMBER?
+;	HOW MANY FILES?
+;	HOW MANY RANDOM FILES?
+;
+;	42880 BYTES FREE
+;	ALTAIR BASIC 5.0 [14JUL78]
+;	[DISK EXTENDED VERSION]
+;	COPYRIGHT 1978 BY MITS INC.
+;	OK
+;	MOUNT 0
+;	OK
+;	FILES
+;	PIP
+;	OK
+;	LOAD "PIP"
+;	OK

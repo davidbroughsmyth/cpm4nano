@@ -47,53 +47,58 @@ func main() {
     	
 	//port parameters
 	options := serial.OpenOptions{
-      		PortName: "COM33",
-      		BaudRate: 9600,
-      		DataBits: 8,
-      		StopBits: 1,
-      		MinimumReadSize: 1,
-   	}
+      PortName: "COM33",
+      BaudRate: 9600,
+      DataBits: 8,
+      StopBits: 1,
+      MinimumReadSize: 1,
+    }
 
-    	//port open
+    //port open
 	comport, err := serial.Open(options)
-    	if err != nil {
-      		log.Fatalf("serial.Open: %v", err)
-    	}
+    if err != nil {
+      log.Fatalf("serial.Open: %v", err)
+    }
 
-    	defer comport.Close()
+    defer comport.Close()
 
 	//flush buffer
 	buf := make([]byte, buf_size)
 	comport.Read(buf)     
 	//transmit buffer
 	b:=make([]byte, 1)
-    	for i = 0; i < length; i++ {
+    for i = 0; i < length; i++ {
 		//char send
 		b[0] = data[i]
 		n, err := comport.Write(b)
+		//20 ms delay
+		time.Sleep(20 * time.Millisecond);
 		//char #
-		fmt.Print(i)
-		fmt.Print("-")
-		//char
 		fmt.Println(string(b[0]))
 		if err != nil {
-      			log.Fatalf("port.Write: %d", n)
+      		log.Fatalf("port.Write: %d", n)
 		}
 		if i<(length-1) {
-			//XON wait
+			fmt.Println("ACK wait");
+			//ACK wait
 			for {
 				buf := make([]byte, 1)
 				n,err = comport.Read(buf)	
 				if err == nil {
 					if n > 0 {
 						if buf[0] == 0x06 {
+							fmt.Println("ACK received");
 							break
 						}
 					}
 				}
 			}
 		}		
-    	}
-	fmt.Print("O.K.")
+    }
+    //EOF sent
+    fmt.Println("EOF");
+    b[0] = 0x1A;//CTRL-Z
+    comport.Write(b);	
+    fmt.Print("O.K.")
 }
 

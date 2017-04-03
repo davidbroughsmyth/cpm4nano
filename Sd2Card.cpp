@@ -594,50 +594,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
   }
   return true;
 }
-//------------------------------------------------------------------------------
-/** Start a write multiple blocks sequence.
- *
- * \param[in] blockNumber Address of first block in sequence.
- * \param[in] eraseCount The number of blocks to be pre-erased.
- *
- * \note This function is used with writeData() and writeStop()
- * for optimized multiple block writes.
- *
- * \return The value one, true, is returned for success and
- * the value zero, false, is returned for failure.
- */
-/*
-uint8_t Sd2Card::writeStart(uint32_t blockNumber, uint32_t eraseCount) {
-#if SD_PROTECT_BLOCK_ZERO
-  // don't allow write to first block
-  if (blockNumber == 0) {
-    error(SD_CARD_ERROR_WRITE_BLOCK_ZERO);
-    goto fail;
-  }
-#endif  // SD_PROTECT_BLOCK_ZERO
-  // send pre-erase count
-  if (cardAcmd(ACMD23, eraseCount)) {
-    error(SD_CARD_ERROR_ACMD23);
-    goto fail;
-  }
-  // use address if not SDHC card
-  if (type() != SD_CARD_TYPE_SDHC) blockNumber <<= 9;
-  if (cardCommand(CMD25, blockNumber)) {
-    error(SD_CARD_ERROR_CMD25);
-    goto fail;
-  }
-  return true;
 
- fail:
-  chipSelectHigh();
-  return false;
-}
-//------------------------------------------------------------------------------
-/** End a write multiple blocks sequence.
- *
-* \return The value one, true, is returned for success and
- * the value zero, false, is returned for failure.
- */
 uint8_t Sd2Card::writeStop(void) {
   if (!waitNotBusy(SD_WRITE_TIMEOUT)) goto fail;
   spiSend(STOP_TRAN_TOKEN);

@@ -1,0 +1,16 @@
+reset cpu
+set sio ansi
+set sio upper
+set cpu 8080
+set cpu altairrom
+l exbas.bin 0
+d sr 8
+g 0
+;	MEMORY SIZE?
+;	WANT SIN-COS-TAN-ATN? Y
+;
+;	50606 BYTES FREE
+;	ALTAIR BASIC REV. 4.0
+;	[EXTENDED VERSION]
+;	COPYRIGHT 1977 BY MITS INC.
+;	OK

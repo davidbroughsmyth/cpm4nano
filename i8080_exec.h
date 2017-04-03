@@ -84,23 +84,42 @@ uint8_t in_port(uint8_t port) {
   boolean readyFlag=false;
   dat = 0x00;
   switch (port) {
-    case CON_PORT_STATUS:
+    //SIO-A
+    case SIOA_CON_PORT_STATUS:
       //bit 1 - ready to out (Altair)
       //bit 5 - ready to in (Altair)
       dat = 0x02;
-      if (Serial.available() > 0) {
+      if (con_ready()) {
         dat = dat | 0x20;
       }
       break;
-    case CON_PORT_DATA:
+    case SIOA_CON_PORT_DATA:
       //input from console
       do {
-        if (Serial.available() > 0) {
-          dat = uint8_t(Serial.read());
+        if (con_ready()) {
+          dat = uint8_t(con_read());
           readyFlag = true;
         }
       } while (!readyFlag);
       break;
+    //SIO-2
+    case SIO2_CON_PORT_STATUS:
+      //bit 1 - ready to out (Altair)
+      //bit 0 - ready to in (Altair)
+      dat = 0x02;
+      if (con_ready()) {
+        dat = dat | 0x01;
+      }
+      break;
+    case SIO2_CON_PORT_DATA:
+      //input from console
+      do {
+        if (con_ready()) {
+          dat = uint8_t(con_read());
+          readyFlag = true;
+        }
+      } while (!readyFlag);
+      break;  
     //FDD ports
     case FDD_PORT_CMD:
       //status
@@ -146,17 +165,23 @@ void out_port(uint8_t port, uint8_t dat) {
   uint32_t blk;
   switch (port) {
     //console ports
-    case CON_PORT_DATA:
+    //SIO-A
+    case SIOA_CON_PORT_DATA:
       //output to console
       Serial.write(dat);
       break;
+    //SIO-2
+    case SIO2_CON_PORT_DATA:
+      //output to console
+      Serial.write(dat);
+      break;  
     //FDD ports
     case FDD_PORT_CMD:
       //command
       if (dat == FDD_RD_CMD) {
         //sector read
         //blk = _getMEM(_FDD_SECTOR)-1;
-        blk = FDD_REG_SEC - 1;
+        blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
         switch (FDD_REG_DRV) {
           case 0:
@@ -172,6 +197,8 @@ void out_port(uint8_t port, uint8_t dat) {
             blk = blk +  SD_FDD_D_OFFSET;
             break;
         }
+        //Serial.print("Read block ");
+        //Serial.println(blk, HEX);
         res = readSD(blk, 0);
         if (res == 1) {
           for (i = 0 ; i < SD_BLK_SIZE ; i++) {
@@ -189,7 +216,7 @@ void out_port(uint8_t port, uint8_t dat) {
       if (dat == FDD_WRT_CMD) {
         //sector write
         //blk = _getMEM(_FDD_SECTOR)-1;
-        blk = FDD_REG_SEC - 1;
+        blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
         switch (FDD_REG_DRV) {
           case 0:
@@ -206,11 +233,13 @@ void out_port(uint8_t port, uint8_t dat) {
             break;
         }
         for (i = 0 ; i < SD_BLK_SIZE ; i++) {
-          _dsk_buffer[i] = FDD_REG_DMA + i;
+          _dsk_buffer[i] = _getMEM(FDD_REG_DMA + i);
         }
         for (i = 0; i < SD_BLK_SIZE; i++) {
           _buffer[i] = _dsk_buffer[i];
         }
+        //Serial.print("Write block ");
+        //Serial.println(blk, HEX);
         res = writeSD(blk);
         if (res == 1) {
           FDD_REG_STATUS = true;
@@ -411,7 +440,6 @@ void _I8080_XCHG() {
 void _I8080_ADD(uint8_t reg) {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   if (reg != _Reg_M) {
     d8 = _Regs[reg];
   }
@@ -442,7 +470,6 @@ void _I8080_ADD(uint8_t reg) {
 void _I8080_ADI() {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   if ((_Regs[_Reg_A] & B1111) + (d8 & B1111) > B1111) {
@@ -469,7 +496,6 @@ void _I8080_ADI() {
 void _I8080_ADC(uint8_t reg) {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   if (reg != _Reg_M) {
     d8 = _Regs[reg];
   }
@@ -483,12 +509,12 @@ void _I8080_ADC(uint8_t reg) {
     _setFlags_A(0);
   }
   d16 = _Regs[_Reg_A] + d8;
-  if ((_Regs[_Reg_M] & 0x1) != 0) //+ C
+  if (_getFlags_C() != 0) //+ C
   {
-    d16 = d16 + 1;
+    d16++;
   }
   d8 = lowByte(d16);
-  if (d16 > 0xFF) {
+  if ((d16 & 0x0100)!=0) {
     _setFlags_C(1);
   }
   else {
@@ -504,7 +530,6 @@ void _I8080_ADC(uint8_t reg) {
 void _I8080_ACI() {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   if ((_Regs[_Reg_A] & B1111) + (d8 & B1111) > B1111) {
@@ -535,7 +560,6 @@ void _I8080_ACI() {
 void _I8080_SUB(uint8_t reg) {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   if (reg != _Reg_M) {
     d8 = _Regs[reg];
   }
@@ -551,7 +575,7 @@ void _I8080_SUB(uint8_t reg) {
   }
   else {
     _setFlags_C(1);
-  } 
+  }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
@@ -568,7 +592,6 @@ void _I8080_SUB(uint8_t reg) {
 void _I8080_SUI() {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   d8 = d8 ^ 0xFF;
@@ -597,7 +620,6 @@ void _I8080_SUI() {
 void _I8080_SBB(uint8_t reg) {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   if (reg != _Reg_M) {
     d8 = _Regs[reg];
   }
@@ -631,7 +653,6 @@ void _I8080_SBB(uint8_t reg) {
 void _I8080_SBI() {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   d8 = d8 + _getFlags_C();
@@ -658,10 +679,13 @@ void _I8080_SBI() {
   _PC++;
 }
 
+//The Auxiliary Carry bit will be affected by all addition,
+//subtraction, increment, decrement, and compare
+//instructions.
+
 //INR
 void _I8080_INR(uint8_t reg) {
   uint8_t d8;
-  uint8_t d1;
   if (reg == _Reg_M)
   {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
@@ -670,12 +694,18 @@ void _I8080_INR(uint8_t reg) {
     d8 = _Regs[reg];
   }
   d8++;
-  _Regs[reg] = d8;
+  if (reg == _Reg_M)
+  {
+     _setMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]),d8);
+  }
+  else {
+    _Regs[reg] = d8;
+  }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
-  //AC  ???
-  if (d8 == 0x10) {
+  //AC
+  if ((d8 & 0x0F)==0x00) {
     _setFlags_A(1);
   }
   else {
@@ -687,7 +717,6 @@ void _I8080_INR(uint8_t reg) {
 //DCR
 void _I8080_DCR(uint8_t reg) {
   uint8_t d8;
-  uint8_t d1;
   if (reg == _Reg_M)
   {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
@@ -696,11 +725,22 @@ void _I8080_DCR(uint8_t reg) {
     d8 = _Regs[reg];
   }
   d8--;
-  _Regs[reg] = d8;
+  if (reg == _Reg_M)
+  {
+     _setMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]), d8);
+  }
+  else {
+    _Regs[reg] = d8;
+  }
   //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + d8);
   _setFlags_C(0);
-  //AC ???
+  if (!((d8 & 0x0F)==0x0F)) {
+    _setFlags_A(1);
+  }
+  else {
+    _setFlags_A(0);
+  }
   _PC++;
 }
 
@@ -802,7 +842,6 @@ void _I8080_DAD(uint8_t rp) {
 //DAA
 void _I8080_DAA() {
   uint8_t d8;
-  uint8_t d1;
   d8 = 0;
   if  ( ((_Regs[_Reg_A] & 0x0F) > 9) || (_getFlags_A() == 1))
   {
@@ -831,7 +870,6 @@ void _I8080_DAA() {
 //ANA
 void _I8080_ANA(uint8_t reg) {
   uint8_t d8;
-  uint8_t d1;
   if (reg == _Reg_M)
   {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
@@ -859,7 +897,6 @@ void _I8080_ANA(uint8_t reg) {
 //ANI
 void _I8080_ANI() {
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   if (((_Regs[_Reg_A] | d8) & 0x08) != 0) {
@@ -881,7 +918,6 @@ void _I8080_ANI() {
 //ORA
 void _I8080_ORA(uint8_t reg) {
   uint8_t d8;
-  uint8_t d1;
   if (reg == _Reg_M)
   {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
@@ -903,7 +939,6 @@ void _I8080_ORA(uint8_t reg) {
 //ORI
 void _I8080_ORI() {
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   d8 = d8 | _Regs[_Reg_A];
@@ -919,7 +954,6 @@ void _I8080_ORI() {
 //XRA
 void _I8080_XRA(uint8_t reg) {
   uint8_t d8;
-  uint8_t d1;
   if (reg == _Reg_M)
   {
     d8 = _getMEM(word(_Regs[_Reg_H], _Regs[_Reg_L]));
@@ -941,7 +975,6 @@ void _I8080_XRA(uint8_t reg) {
 //XRI
 void _I8080_XRI() {
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   d8 = d8 ^ _Regs[_Reg_A];
@@ -958,7 +991,6 @@ void _I8080_XRI() {
 void _I8080_CMP(uint8_t reg) {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   if (reg != _Reg_M) {
     d8 = _Regs[reg];
   }
@@ -973,7 +1005,7 @@ void _I8080_CMP(uint8_t reg) {
   }
   else {
     _setFlags_C(1);
-  }    
+  }
     //SZP flags
   _Regs[_Reg_M] = (_Regs[_Reg_M] & SZP_RESET) | pgm_read_byte_near(SZP_table + lowByte(d16));
   if ((_Regs[_Reg_A] & 0xF) + (d8 & 0xF) > 0xF) {
@@ -989,7 +1021,6 @@ void _I8080_CMP(uint8_t reg) {
 void _I8080_CPI() {
   uint16_t d16;
   uint8_t d8;
-  uint8_t d1;
   _PC++;
   d8 = _getMEM(_PC);
   d8 = d8 ^ 0xFF;
@@ -1461,7 +1492,6 @@ void _I8080_POP(uint8_t rp) {
 void _I8080_IN() {
   uint8_t d8;
   uint8_t pa;
-  bool flag = false;
   _PC++;
   pa = _getMEM(_PC);
   d8 = in_port(pa);
