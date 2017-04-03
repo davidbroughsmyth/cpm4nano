@@ -87,7 +87,7 @@ const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;
 //----------------------------------------------------
 //console emulation
 //console ports
-//SIO-A
+//SIO-A//SSM
 const uint8_t SIOA_CON_PORT_STATUS = 0x00;//status
 const uint8_t SIOA_CON_PORT_DATA = 0x01;//data
 //SIO-2

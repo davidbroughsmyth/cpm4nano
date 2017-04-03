@@ -84,13 +84,18 @@ uint8_t in_port(uint8_t port) {
   boolean readyFlag=false;
   dat = 0x00;
   switch (port) {
-    //SIO-A
+    //SIO-A/SSM
     case SIOA_CON_PORT_STATUS:
-      //bit 1 - ready to out (Altair)
-      //bit 5 - ready to in (Altair)
-      dat = 0x02;
+      //SIO-A
+      //bit 1 - ready to out
+      //bit 5 - ready to in
+      //SSM 
+      //bit 7 - ready to out
+      //bit 0 - ready to in
+      dat = 0x02 | 0x80;
       if (con_ready()) {
         dat = dat | 0x20;
+        dat = dat | 0x01;
       }
       break;
     case SIOA_CON_PORT_DATA:
@@ -165,7 +170,7 @@ void out_port(uint8_t port, uint8_t dat) {
   uint32_t blk;
   switch (port) {
     //console ports
-    //SIO-A
+    //SIO-A/SSM
     case SIOA_CON_PORT_DATA:
       //output to console
       Serial.write(dat);
