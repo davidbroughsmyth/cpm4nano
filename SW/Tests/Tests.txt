@@ -1,5 +1,0 @@
-What you are looking for are the suite of 8080/8085 CPU Diagnostic exercises. I've found three which together make up quite a comprehensive test suite.
-
-    8080/8085 CPU Diagnostic, version 1.0, by Microcosm Associates
-    Diagnostics II, version 1.2, CPU test by Supersoft Associates
-    8080/8085 CPU Exerciser by Ian Bartholomew and Frank Cringles
