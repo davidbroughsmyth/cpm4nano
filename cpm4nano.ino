@@ -126,7 +126,11 @@ const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
 //SD read/write
 Sd2Card card;
+<<<<<<< HEAD
 const uint8_t SS_SD_pin = 10; //SS pin D10
+=======
+const uint8_t SS_SD_pin=10;//SS pin D10
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
 const uint16_t SD_BLK_SIZE = 128;
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
@@ -151,12 +155,20 @@ uint8_t writeSD (uint32_t blk) {
 }
 //----------------------------------------------------
 //SPI RAM read/write
+<<<<<<< HEAD
 const uint8_t SS_SPIRAM_pin = 6; //SS SPI RAM pin D6
+=======
+const uint8_t SS_SPIRAM_pin=6;//SS SPI RAM pin D6
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
 const uint16_t SPIRAM_DELAY_US = 100;
 SpiRAM SpiRam(0, SS_SPIRAM_pin);
 
 uint8_t readSPIRAM (uint16_t adr) {
+<<<<<<< HEAD
   uint8_t dat;
+=======
+  uint8_t dat; 
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
   dat = uint8_t(SpiRam.read_byte(adr));
   delayMicroseconds(SPIRAM_DELAY_US);
   return dat;
@@ -349,7 +361,11 @@ void setup() {
   //logo
   color(2);
   Serial.println(F("***************************************"));
+<<<<<<< HEAD
   Serial.print(F("*     CP/M for Arduino Nano V"));
+=======
+  Serial.print(F("*     CP/M for Arduino Nano V")); 
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
   Serial.print(VER_MAJOR);
   Serial.print(".");
   Serial.print(VER_MINOR);
@@ -412,9 +428,15 @@ void setup() {
   Serial.print(F("RAM test..."));
   //RAM write
   j = 0;
+<<<<<<< HEAD
   for (i = 0; i < (MEM_SIZE * 1024L) ; i++) {
     _setMEM(i, pgm_read_byte_near(memtest_table + j));
     if ((i % 32768) == 0) {
+=======
+  for (i = 0; i < (MEM_SIZE*1024L) ; i++) {
+    _setMEM(i, pgm_read_byte_near(memtest_table+j));
+    if ((i % 16384) == 0) {
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
       Serial.println("");
     }
     if ((i % 1024) == 0) {
@@ -427,8 +449,13 @@ void setup() {
   }
   //RAM read
   j = 0;
+<<<<<<< HEAD
   for (i = 0; i < MEM_SIZE * 1024L; i++) {
     if ((i % 32768) == 0) {
+=======
+  for (i = 0; i < MEM_SIZE*1024L; i++) {
+    if ((i % 16384) == 0) {
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
       Serial.println("");
     }
     if ((i % 1024) == 0) {
@@ -453,7 +480,11 @@ void setup() {
   Serial.println(F(" byte(s) of RAM are available"));
   //RAM clear
   Serial.print(F("RAM clearing..."));
+<<<<<<< HEAD
   for (i = 0; i < MEM_SIZE * 1024L; i++) {
+=======
+  for (i = 0; i < MEM_SIZE*1024L; i++) {
+>>>>>>> 6934cbb1d79c1b191dccdb3e447998838f38917f
     _setMEM(i, 0);
     if ((i % 32768) == 0) {
       Serial.println("");
