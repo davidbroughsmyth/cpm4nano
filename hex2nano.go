@@ -47,7 +47,7 @@ func main() {
     	
 	//port parameters
 	options := serial.OpenOptions{
-      		PortName: "COM33",
+      		PortName: "COM38",
       		BaudRate: 9600,
       		DataBits: 8,
       		StopBits: 1,

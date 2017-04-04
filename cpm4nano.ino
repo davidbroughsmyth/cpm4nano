@@ -30,8 +30,12 @@
 */
 
 //TO DO
-const uint8_t MEM_SIZE = 64;//Memory Size, KBytes
+//memory constants/variables
+const uint8_t MEM_SIZE = 64;//System RAM Size, KBytes
+const uint16_t MEM_MAX = (MEM_SIZE-1)*1024U + 1023U;//maximum system RAM address
+uint32_t RAM_AVAIL = 0x10000L;//available RAM Size, KBytes (64 KBytes maximum)
 const uint8_t RAM_SIZE = 32;//RAM Size for CP/M, KBytes
+
 #include <avr/pgmspace.h>
 #include "Sd2Card.h"
 //include "TEST.h"
@@ -285,11 +289,91 @@ char upCase(char symbol) {
 
 //-----------------------------------------------------
 
+
 #include "MEM.h"
 #include "i8080_exec.h"
 #include "ESC.h"
 #include "BIOS.h"
 #include "i8080_fns.h"
+
+
+uint32_t mem_test(boolean brk)
+{
+  uint32_t i;
+  uint16_t j;
+  uint32_t res;
+  res = 0x10000L;
+  //RAM write
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    _setMEM(i, pgm_read_byte_near(memtest_table + j));
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    if (_getMEM(i) != pgm_read_byte_near(memtest_table + j)) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+        if (brk && con_ready()) {
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM write (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF ; i++) {
+    _setMEM(i, uint8_t(~(pgm_read_byte_near(memtest_table + j))));
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    if (_getMEM(i) != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      return 0xFFFFF;//break
+    }
+  }
+  return res;
+}
+
 
 void call(word addr)
 {
@@ -409,51 +493,14 @@ void setup() {
     }
   } while (_cardsize == 0);
   //RAM test
-  Serial.print(F("RAM test..."));
-  //RAM write
-  j = 0;
-  for (i = 0; i < (MEM_SIZE * 1024L) ; i++) {
-    _setMEM(i, pgm_read_byte_near(memtest_table + j));
-    if ((i % 32768) == 0) {
-      Serial.println("");
-    }
-    if ((i % 1024) == 0) {
-      Serial.print("*");
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-  }
-  //RAM read
-  j = 0;
-  for (i = 0; i < MEM_SIZE * 1024L; i++) {
-    if ((i % 32768) == 0) {
-      Serial.println("");
-    }
-    if ((i % 1024) == 0) {
-      Serial.print("?");
-    }
-    if (_getMEM(i) != pgm_read_byte_near(memtest_table + j)) {
-      RAMTestPass = false;
-      Serial.print(F("RAM test failed at byte "));
-      Serial.println(i, HEX);
-      break;
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-  }
-  Serial.println("");
-  if (RAMTestPass == true) {
-    Serial.println(F("O.K."));
-  }
-  Serial.print(i, DEC);
+  Serial.println(F("RAM test..."));
+  RAM_AVAIL = mem_test(false);
+  Serial.println("");  
+  Serial.print(RAM_AVAIL, DEC);
   Serial.println(F(" byte(s) of RAM are available"));
   //RAM clear
   Serial.print(F("RAM clearing..."));
-  for (i = 0; i < MEM_SIZE * 1024L; i++) {
+  for (i = 0; i < RAM_AVAIL; i++) {
     _setMEM(i, 0);
     if ((i % 32768) == 0) {
       Serial.println("");

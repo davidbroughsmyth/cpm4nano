@@ -294,7 +294,7 @@
     }
 
     //M - Debug Mode on/off
-    if (mon_buffer[0]=='M') {
+    if (mon_buffer[0]=='W') {
       DEBUG = !DEBUG;
       if (DEBUG) {
         Serial.println(F("Debug ON"));
@@ -444,6 +444,39 @@
     //R - reset
     if (mon_buffer[0]=='R') {
       sys_reset();
+    }
+
+    //M - Memory  tesr
+    if (mon_buffer[0]=='M') {
+      uint32_t pass_cnt=0;
+      boolean go=true;
+      uint32_t temp;
+      clrscr();//clear screen
+      Serial.println("RAM TEST...");
+      Serial.println("PRESS ANY KEY TO BREAK");
+      do {      
+        xy(3,0);
+        clrlin();
+        temp = mem_test(true);
+        if (temp == 0xFFFFF) {
+          go = false;//break
+        }
+        else {
+          if (RAM_AVAIL>temp) {
+            pass_cnt++;
+            RAM_AVAIL = temp;
+          }
+          pass_cnt++;
+          Serial.println("");
+          clrlin();
+          Serial.print("PASS ");
+          Serial.print(pass_cnt, DEC);
+          Serial.print(" RAM: ");
+          Serial.print(RAM_AVAIL, DEC);
+          Serial.print(" BYTE(S)");
+        }
+      } while (go);
+     goto MON_END;
     }
 
 MON_INVALID:

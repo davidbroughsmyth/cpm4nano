@@ -12,6 +12,9 @@ uint8_t _getMEM(uint16_t adr) {
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
+  if (adr>MEM_MAX) {
+    return 0xFF;//not memory
+  }
   //RAM mode set
   //RAM_MODE = 1;//SPI RAM
   RAM_MODE = 0;//SD Card
@@ -102,6 +105,8 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
+  if (x>MEM_MAX) {
+  }
   //RAM mode set
   //RAM_MODE = 1;//SPI RAM
   RAM_MODE = 0;//SD Card
