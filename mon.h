@@ -451,6 +451,7 @@
       uint32_t pass_cnt=0;
       boolean go=true;
       uint32_t temp;
+      con_flush();
       clrscr();//clear screen
       Serial.println("RAM TEST...");
       Serial.println("PRESS ANY KEY TO BREAK");

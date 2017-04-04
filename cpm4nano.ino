@@ -315,6 +315,7 @@ uint32_t mem_test(boolean brk)
       j = 0;
     }
     if (brk && con_ready()) {
+      con_read();
       return 0xFFFFF;//break
     }
   }
@@ -334,7 +335,8 @@ uint32_t mem_test(boolean brk)
       j = 0;
     }
         if (brk && con_ready()) {
-      return 0xFFFFF;//break
+          con_read();
+          return 0xFFFFF;//break
     }
   }
   //RAM write (inverse)
@@ -349,6 +351,7 @@ uint32_t mem_test(boolean brk)
       j = 0;
     }
     if (brk && con_ready()) {
+      con_read();
       return 0xFFFFF;//break
     }
   }
@@ -368,6 +371,7 @@ uint32_t mem_test(boolean brk)
       j = 0;
     }
     if (brk && con_ready()) {
+      con_read();
       return 0xFFFFF;//break
     }
   }
