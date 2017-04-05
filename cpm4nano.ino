@@ -506,10 +506,7 @@ void setup() {
   Serial.print(F("RAM clearing..."));
   for (i = 0; i < RAM_AVAIL; i++) {
     _setMEM(i, 0);
-    if ((i % 32768) == 0) {
-      Serial.println("");
-    }
-    if ((i % 1024) == 0) {
+    if ((i % 2048) == 0) {
       Serial.print("#");
     }
   }
