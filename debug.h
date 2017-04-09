@@ -86,7 +86,7 @@
   Serial.println(hex);
   clrlin();
   Serial.print(F("CMD: "));
-  sprintf(hex, "%02X", cmd);
+  sprintf(hex, "%02X", _IR);
   Serial.print(hex);
   Serial.println("");
   clrlin();

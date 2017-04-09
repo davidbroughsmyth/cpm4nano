@@ -40,13 +40,24 @@ const uint8_t RAM_SIZE = 32;//RAM Size for CP/M, KBytes
 #include "Sd2Card.h"
 //include "TEST.h"
 #include "CPM_def.h"
-#include "SpiRAM.h"
+//#include "SpiRAM.h"
 
 //version
 const char VER_MAJOR = '0';
-const char VER_MINOR = '1';
+const char VER_MINOR = '2';
 //----------------------------------------------------
 //CPU emulation
+volatile uint8_t _W;// W register
+volatile uint8_t _Z;// Z register
+volatile uint8_t _ACT;// ACT register
+volatile uint8_t _TMP;// TMP register
+volatile uint8_t _ALU;// ALU
+volatile uint16_t _PC; //program counter
+volatile uint16_t _SP; //stack pointer
+volatile uint8_t _IR; //instruction register
+volatile uint8_t _DB; //data bus buffer
+volatile uint16_t _AB; //data bus buffer
+bool INTE;
 boolean DEBUG;//debug mode flag
 //SZ000P00
 const static uint8_t PROGMEM SZP_table[] = {
@@ -155,6 +166,7 @@ uint8_t writeSD (uint32_t blk) {
 }
 //----------------------------------------------------
 //SPI RAM read/write
+/*
 const uint8_t SS_SPIRAM_pin = 6; //SS SPI RAM pin D6
 const uint16_t SPIRAM_DELAY_US = 100;
 SpiRAM SpiRam(0, SS_SPIRAM_pin);
@@ -170,6 +182,7 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
   SpiRam.write_byte(adr, char(dat));
   delayMicroseconds(SPIRAM_DELAY_US);
 }
+*/
 //---------------------------------------------------
 //debug
 uint16_t breakpoint = 0xFFFF;
@@ -306,7 +319,9 @@ uint32_t mem_test(boolean brk)
   //RAM write
   j = 0;
   for (i = 0; i <= 0xFFFF; i++) {
-    _setMEM(i, pgm_read_byte_near(memtest_table + j));
+    _AB = i;
+    _DB = pgm_read_byte_near(memtest_table + j);
+    _WRMEM();
     if ((i % 8192) == 0) {
       Serial.print(".");
     }
@@ -325,7 +340,9 @@ uint32_t mem_test(boolean brk)
     if ((i % 8192) == 0) {
       Serial.print(".");
     }
-    if (_getMEM(i) != pgm_read_byte_near(memtest_table + j)) {
+    _AB = i;
+    _RDMEM();
+    if (_DB != pgm_read_byte_near(memtest_table + j)) {
       if (res>i) {
         res = i;
       }
@@ -342,7 +359,9 @@ uint32_t mem_test(boolean brk)
   //RAM write (inverse)
   j = 0;
   for (i = 0; i <= 0xFFFF ; i++) {
-    _setMEM(i, uint8_t(~(pgm_read_byte_near(memtest_table + j))));
+    _AB = i;
+    _DB = uint8_t(~(pgm_read_byte_near(memtest_table + j)));
+    _WRMEM();
     if ((i % 8192) == 0) {
       Serial.print(".");
     }
@@ -361,7 +380,9 @@ uint32_t mem_test(boolean brk)
     if ((i % 8192) == 0) {
       Serial.print(".");
     }
-    if (_getMEM(i) != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
+    _AB = i;
+    _RDMEM();
+    if (_DB != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
       if (res>i) {
         res = i;
       }
@@ -387,14 +408,17 @@ void call(word addr)
   _PC = addr;
   do
   {
-    if (_PC ==  breakpoint) {
+    _AB = _PC;
+    if (_AB ==  breakpoint) {
       DEBUG = true;
     }
-
-#include "BIOS_int.h"
-    cmd = _getMEM(_PC);
-#include "debug.h"
-    ((CmdFunction) pgm_read_word (&doCmdArray [cmd])) ();
+    #include "BIOS_int.h"
+    if (!exitFlag) {
+    _RDMEM();//(AB) -> INSTR  instruction fetch
+    _IR = _DB;
+    #include "debug.h" 
+    }
+    ((CmdFunction) pgm_read_word (&doCmdArray [_IR])) ();
   } while (exitFlag == false);
   if (MEM_ERR) {
     MEM_ERR = false;
@@ -446,6 +470,17 @@ void setup() {
   Serial.println(F("*      https://acdc.foxylab.com       *"));
   Serial.println(F("***************************************"));
   Serial.println("");
+/*
+asm (
+  "1:         \n"
+  "nop        \n" //repeating code goes here
+  );
+  Serial.print("T");
+  delay(100);
+asm (
+  "jmp 1b        \n"
+  );
+*/  
   //flush serial buffer
   con_flush();
   //select memory type
@@ -503,9 +538,11 @@ void setup() {
   Serial.print(RAM_AVAIL, DEC);
   Serial.println(F(" byte(s) of RAM are available"));
   //RAM clear
-  Serial.print(F("RAM clearing..."));
+  Serial.println(F("RAM clearing..."));
   for (i = 0; i < RAM_AVAIL; i++) {
-    _setMEM(i, 0);
+    _AB = i;
+    _DB = 0;
+    _WRMEM();
     if ((i % 2048) == 0) {
       Serial.print("#");
     }

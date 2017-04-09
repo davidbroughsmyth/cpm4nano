@@ -23,11 +23,16 @@ void _charOut(uint8_t c) {
 void _BIOS_RET() {
     uint16_t a16;
     //RET
-    a16 = _getMEM(_SP);
+    _AB = _SP;
+    _RDMEM();
+    a16 = _DB;
     _SP++;
-    a16 = a16 + 256 * _getMEM(_SP);
+    _AB = _SP;
+    _RDMEM();
+    a16 = a16 + 256 * _DB;
     _SP++;
     _PC = a16;
+    _AB = _PC;
 }
 
 #define CPMSYS_COUNT 11
@@ -57,13 +62,8 @@ boolean _IPL() {
   Serial.print(" ... ");
   Serial.println(_BIOS_HI, HEX);  
   _SP = SP_INIT;
-  out_port(SIOA_CON_PORT_DATA, 0x0D);  
-  out_port(SIOA_CON_PORT_DATA, 0x0A);
-  out_port(SIOA_CON_PORT_DATA, 'I');
-  out_port(SIOA_CON_PORT_DATA, 'P');
-  out_port(SIOA_CON_PORT_DATA, 'L');
-  out_port(SIOA_CON_PORT_DATA, 0x0D);
-  out_port(SIOA_CON_PORT_DATA, 0x0A);
+  Serial.println("");
+  Serial.println(F("IPL"));
   FDD_REG_DRV = 0;
   FDD_REG_TRK = 0;
   FDD_REG_SEC = 1;
@@ -76,7 +76,9 @@ boolean _IPL() {
           _dsk_buffer[i] = _buffer[i];
         }     
         for (i = 0 ; i < SD_BLK_SIZE ; i++) {
-          _setMEM(CBASE+i+k+j*512, _dsk_buffer[i]);
+          _AB = CBASE+i+k+j*512;
+          _DB = _dsk_buffer[i];
+          _WRMEM();
         }   
       }  
       out_port(SIOA_CON_PORT_DATA, '.');
@@ -85,95 +87,154 @@ boolean _IPL() {
   //checksum checking
   for(j=0;j<CPMSYS_COUNT;j++) {
       for (i = 0 ; i < 512 ; i++) {
-        d8 = _getMEM(CBASE+i+j*512);
+        _AB = CBASE+i+j*512;
+        _RDMEM();
+        d8 = _DB;
         checksum = checksum + d8;
       }
   }
-  out_port(SIOA_CON_PORT_DATA, 0x0D);  
-  out_port(SIOA_CON_PORT_DATA, 0x0A);
+  Serial.println("");
   Serial.print(F("Checksum: "));
   sprintf(hex, "%02X", checksum);
   Serial.print(hex);
   Serial.print(" ");
   if (checksum != CPMSYS_CS) {
-     out_port(SIOA_CON_PORT_DATA, 'E');
-     out_port(SIOA_CON_PORT_DATA, 'R');
-     out_port(SIOA_CON_PORT_DATA, 'R');
-     out_port(SIOA_CON_PORT_DATA, '!');
-     out_port(SIOA_CON_PORT_DATA, 0x0D);  
-     out_port(SIOA_CON_PORT_DATA, 0x0A);
+     Serial.println(F("ERR!"));
      success = false;
   }
   else {
-     out_port(SIOA_CON_PORT_DATA, 'O');
-     out_port(SIOA_CON_PORT_DATA, '.');
-     out_port(SIOA_CON_PORT_DATA, 'K');
-     out_port(SIOA_CON_PORT_DATA, '.');
-     out_port(SIOA_CON_PORT_DATA, 0x0D);  
-     out_port(SIOA_CON_PORT_DATA, 0x0A);
+     Serial.println(F("O.K.!"));
      success = true;
 
      for(j=CPM_LBL_START;j<(CPM_LBL_START+CPM_LBL_LEN);j++) {
-        Serial.write(_getMEM(CBASE+j));
+        _AB = CBASE+j;
+        _RDMEM();
+        Serial.write(_DB);
      }
      Serial.println("");
      Serial.print(F("Serial: "));
      for(j=CPM_SERIAL_START;j<(CPM_SERIAL_START+CPM_SERIAL_LEN);j++) {
-        sprintf(hex, "%02X", _getMEM(CBASE+j));
+        _AB = CBASE+j;
+        _RDMEM();
+        sprintf(hex, "%02X", _DB);
         Serial.print(hex);
      }
      Serial.println("");
   
     i = 0;
     i = i + _DPBASE;      
-    _setMEM(i + 0, 0x00);
-    _setMEM(i + 1, 0x00);
-    _setMEM(i + 2, 0x00);
-    _setMEM(i + 3, 0x00);
-    _setMEM(i + 4, 0x00);
-    _setMEM(i + 5, 0x00);
-    _setMEM(i + 6, 0x00);
-    _setMEM(i + 7, 0x00);
+    _AB = i + 0;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 1;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 2;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 3;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 4;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 5;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 6;
+    _DB = 0x00;
+    _WRMEM();
+    _AB = i + 7;
+    _DB = 0x00;
+    _WRMEM();
     //DIRBUF
-    _setMEM(i + 8, lowByte(_DIRBUF));
-    _setMEM(i + 9, highByte(_DIRBUF));
+    _AB = i + 8;
+    _DB = lowByte(_DIRBUF);
+    _WRMEM();
+    _AB = i + 9;
+    _DB = highByte(_DIRBUF);
+    _WRMEM();
     //DPB
-    _setMEM(i + 10, lowByte(_DPBLK));
-    _setMEM(i + 11, highByte(_DPBLK));
+    _AB = i + 10;
+    _DB = lowByte(_DPBLK);
+    _WRMEM();
+    _AB = i + 11;
+    _DB = highByte(_DPBLK);
+    _WRMEM();
     //CSV
-    _setMEM(i + 12, lowByte(_CHK00));
-    _setMEM(i + 13, highByte(_CHK00));
+    _AB = i + 12;
+    _DB = lowByte(_CHK00);
+    _WRMEM();
+    _AB = i + 13;
+    _DB = highByte(_CHK00);
+    _WRMEM();
     //ALV
-    _setMEM(i + 14, lowByte(_ALL00));
-    _setMEM(i + 15, highByte(_ALL00));
+    _AB = i + 14;
+    _DB = lowByte(_ALL00);
+    _WRMEM();
+    _AB = i + 15;
+    _DB = highByte(_ALL00);
+    _WRMEM();
     //DPB init
     i = _DPBLK;
     //SPT
-    _setMEM(i, 26);
-    _setMEM(i + 1, 0);
+    _AB = i;
+    _DB = 26;
+    _WRMEM();
+    _AB = i + 1;
+    _DB = 0;
+    _WRMEM();
     //BSH
-    _setMEM(i + 2, 3);
+    _AB = i + 2;
+    _DB = 3;
+    _WRMEM();
     //BLM
-    _setMEM(i + 3, 7); 
+    _AB = i + 3;
+    _DB = 7;
+    _WRMEM();
     //EXM
-    _setMEM(i + 4, 0);
+    _AB = i + 4;
+    _DB = 0;
+    _WRMEM();
     //DSM
-    _setMEM(i + 5, 242); 
-    _setMEM(i + 6, 0);
+    _AB = i + 5;
+    _DB = 242;
+    _WRMEM();
+    _AB = i + 6;
+    _DB = 0;
+    _WRMEM();
     //DRM
-    _setMEM(i + 7, 63);  
-    _setMEM(i + 8, 0);
-    //AL0
-    _setMEM(i + 9, 192);
+    _AB = i + 7;
+    _DB = 63;
+    _WRMEM();
+    _AB = i + 8;
+    _DB = 0;
+    _WRMEM();
+    //AL0    
+    _AB = i + 9;
+    _DB = 192;
+    _WRMEM();
     //AL1
-    _setMEM(i + 0xA, 0);
+    _AB = i + 0xA;
+    _DB = 0;
+    _WRMEM();
     //CKS
-    _setMEM(i + 0xB, 0);
-    _setMEM(i + 0xC, 0);
+    _AB = i + 0xB;
+    _DB = 0;
+    _WRMEM();
+    _AB = i + 0xC;
+    _DB = 0;
+    _WRMEM();
     //OFF
-    _setMEM(i + 0xD, 0);
-    _setMEM(i + 0xE, 0);
-    _setMEM(i + 0xF, 0);
+    _AB = i + 0xD;
+    _DB = 0;
+    _WRMEM();
+    _AB = i + 0xE;
+    _DB = 0;
+    _WRMEM();
+    _AB = i + 0xF;
+    _DB = 0;
+    _WRMEM();
   /*      
      BLS       BSH     BLM           EXM
    -----      ---     ---     DSM<256   DSM>=256
@@ -185,38 +246,53 @@ boolean _IPL() {
 
 void _GOCPM(boolean jmp) {
     //JMP TO WBOOT
-    _setMEM(JMP_BOOT, 0xC3);
-    _setMEM(JMP_BOOT+1, lowByte(_BIOS+3));
-    _setMEM(JMP_BOOT+2, highByte(_BIOS+3));
+    _AB = JMP_BOOT;
+    _DB = 0xC3;
+    _WRMEM();
+    _AB = JMP_BOOT + 1;
+    _DB = lowByte(_BIOS+3);
+    _WRMEM();
+    _AB = JMP_BOOT + 2;
+    _DB = highByte(_BIOS+3);
+    _WRMEM();
     //JMP TO BDOS
-    _setMEM(JMP_BDOS, 0xC3);
-    _setMEM(JMP_BDOS+1, lowByte(FBASE));
-    _setMEM(JMP_BDOS+2, highByte(FBASE));
+    _AB = JMP_BDOS;
+    _DB = 0xC3;
+    _WRMEM();
+    _AB = JMP_BDOS + 1;
+    _DB = lowByte(FBASE);
+    _WRMEM();
+    _AB = JMP_BDOS + 2;
+    _DB = highByte(FBASE);
+    _WRMEM();
     //SETDMA 0x80
-    out_port(FDD_PORT_DMA_ADDR_LO, 0x80);
-    out_port(FDD_PORT_DMA_ADDR_HI, 0x00);
+    _AB = word(FDD_PORT_DMA_ADDR_LO, FDD_PORT_DMA_ADDR_LO);
+    _DB = 0x80;
+    _OUTPORT();
+    _AB = word(FDD_PORT_DMA_ADDR_HI, FDD_PORT_DMA_ADDR_HI);
+    _DB = 0x00;
+    _OUTPORT();
     //GET CURRENT DISK NUMBER   SEND TO THE CCP
-    _Regs[_Reg_C] = _getMEM(CDISK);
+    _AB = CDISK;
+    _RDMEM();
+    _rC = _DB;
     //GO TO CP/M FOR FURTHER PROCESSING
     if (jmp) { 
       _PC = CBASE;
+      _AB = _PC;
     }
 }
 
 void _BOOT() {
     //message BOOT
-    out_port(SIOA_CON_PORT_DATA, 0x0D);
-    out_port(SIOA_CON_PORT_DATA, 0x0A);
-    out_port(SIOA_CON_PORT_DATA, 'B');
-    out_port(SIOA_CON_PORT_DATA, 'O');
-    out_port(SIOA_CON_PORT_DATA, 'O');
-    out_port(SIOA_CON_PORT_DATA, 'T');
-    out_port(SIOA_CON_PORT_DATA, 0x0D);
-    out_port(SIOA_CON_PORT_DATA, 0x0A);
-    //IOBYTE clear
-    _setMEM(IOBYTE, 0x00);
-    //select disk 0
-    _setMEM(CDISK, 0x00);
+    Serial.println("");
+    Serial.println(F("BOOT"));
+    _AB = IOBYTE;
+    _DB = 0x00;
+    _WRMEM();//IOBYTE clear
+    _AB = CDISK;
+    _DB = 0x00;
+    _WRMEM();//select disk 0
     //INITIALIZE AND GO TO CP/M
     _GOCPM(true);
 }
@@ -224,15 +300,8 @@ void _BOOT() {
 void _WBOOT() {
   boolean load;
     //message WBOOT
-    out_port(SIOA_CON_PORT_DATA, 0x0D);
-    out_port(SIOA_CON_PORT_DATA, 0x0A);
-    out_port(SIOA_CON_PORT_DATA, 'W');
-    out_port(SIOA_CON_PORT_DATA, 'B');
-    out_port(SIOA_CON_PORT_DATA, 'O');
-    out_port(SIOA_CON_PORT_DATA, 'O');
-    out_port(SIOA_CON_PORT_DATA, 'T');
-    out_port(SIOA_CON_PORT_DATA, 0x0D);
-    out_port(SIOA_CON_PORT_DATA, 0x0A);
+    Serial.println("");
+    Serial.println(F("WBOOT"));
     //USE SPACE BELOW BUFFER FOR STACK
     _SP = 0x80;
     do {
@@ -253,24 +322,30 @@ void _BIOS_WBOOT() {
 
 
 void _BIOS_CONST() {
-     if ((in_port(SIOA_CON_PORT_STATUS) & 0x20)!=0) {
-          _Regs[_Reg_A] = 0xFF;
+     _AB = word(SIOA_CON_PORT_STATUS, SIOA_CON_PORT_STATUS);
+     _INPORT();
+     if ((_DB & 0x20)!=0) {
+          _rA = 0xFF;
      }
      else {
-          _Regs[_Reg_A] = 0x00;
+          _rA = 0x00;
     }
     _BIOS_RET();
 }
 
 
 void _BIOS_CONIN() {
-      _Regs[_Reg_A] = in_port(SIOA_CON_PORT_DATA) & B01111111;
+      _AB = word(SIOA_CON_PORT_DATA, SIOA_CON_PORT_DATA);
+      _INPORT();
+      _rA = _DB & B01111111;
       _BIOS_RET();
 }
 
 
 void _BIOS_CONOUT() {
-    _charOut(_Regs[_Reg_C]);
+    _AB = SIOA_CON_PORT_DATA;
+    _DB = _rC;
+    _OUTPORT();
     _BIOS_RET();
 }
 
@@ -283,9 +358,13 @@ void _BIOS_PUNCH() {
 }
 
 void _BIOS_READER() {
-      _Regs[_Reg_A] = in_port(SIOA_CON_PORT_DATA) & B01111111;
+      _AB = word(SIOA_CON_PORT_DATA, SIOA_CON_PORT_DATA);
+      _INPORT();
+      _rA = _DB & B01111111;
        //ACK sent
-       out_port(SIOA_CON_PORT_DATA, ACK);
+       _AB = word(SIOA_CON_PORT_DATA, SIOA_CON_PORT_DATA);
+       _DB = ACK;
+       _OUTPORT();
       _BIOS_RET();    
 }
 
@@ -295,73 +374,91 @@ void _BIOS_LISTST() {
 }
 
 void _BIOS_SETTRK() {
-     out_port(FDD_PORT_TRK,_Regs[_Reg_C]); 
+     _AB = word(FDD_PORT_TRK, FDD_PORT_TRK);
+     _DB = _rC;
+     _OUTPORT();
     _BIOS_RET();    
 }
 
 void _BIOS_HOME() {
-    _Regs[_Reg_C] = 0;//track 0
-    out_port(FDD_PORT_TRK,_Regs[_Reg_C]); 
+    _rC = 0;//track 0
+    _AB = word(FDD_PORT_TRK, FDD_PORT_TRK);
+    _DB = _rC;
+    _OUTPORT();
     _BIOS_RET();        
 }
 
 void _BIOS_SELDSK() {
      uint16_t a16;
      uint8_t d8;
-     d8 = _Regs[_Reg_C];
+     d8 = _rC;
       if (d8>(FDD_NUM-1)) {
-        _Regs[_Reg_H] = 0;
-        _Regs[_Reg_L] = 0;  
+        _rH = 0;
+        _rL = 0;  
       }
       else {
-      out_port(FDD_PORT_DRV, d8);
+      _AB = word(FDD_PORT_DRV, FDD_PORT_DRV);
+      _DB = d8;
+      _OUTPORT();
       a16 = d8 * 16;
       a16 = a16 + _DPBASE;
-      _Regs[_Reg_H] = highByte(a16);
-      _Regs[_Reg_L] = lowByte(a16);
+      _rH = highByte(a16);
+      _rL = lowByte(a16);
      }
     _BIOS_RET();    
 }
 
 void _BIOS_SETSEC() {
-    out_port(FDD_PORT_SEC,_Regs[_Reg_C]); 
+    _AB = word(FDD_PORT_SEC, FDD_PORT_SEC);
+    _DB = _rC;
+    _OUTPORT();
     _BIOS_RET();    
 }
 
 void _BIOS_SETDMA() {
-    out_port(FDD_PORT_DMA_ADDR_LO, _Regs[_Reg_C]);
-    out_port(FDD_PORT_DMA_ADDR_HI, _Regs[_Reg_B]);
+    _AB = word(FDD_PORT_DMA_ADDR_LO, FDD_PORT_DMA_ADDR_LO);
+    _DB = _rC;
+    _OUTPORT();
+    _AB = word(FDD_PORT_DMA_ADDR_HI, FDD_PORT_DMA_ADDR_HI);
+    _DB = _rB;
+    _OUTPORT();
     _BIOS_RET();    
 }
 
 void _BIOS_READ() {
-     uint8_t res;
-     out_port(FDD_PORT_CMD,FDD_RD_CMD);
-     if (in_port(FDD_PORT_CMD)) { 
-     _Regs[_Reg_A] = DISK_SUCCESS;
+     _AB = word(FDD_PORT_CMD, FDD_PORT_CMD);
+    _DB = FDD_RD_CMD;
+    _OUTPORT();
+    _AB = word(FDD_PORT_CMD, FDD_PORT_CMD);
+    _INPORT();
+     if (_DB) { 
+      _rA = DISK_SUCCESS;
      }
      else {
-      _Regs[_Reg_A] = DISK_ERROR;
+      _rA = DISK_ERROR;
      }
     _BIOS_RET();    
 }
 
 void _BIOS_WRITE() {
-    uint8_t res; 
-    out_port(FDD_PORT_CMD,FDD_WRT_CMD);
-    if (in_port(FDD_PORT_CMD)) { 
-      _Regs[_Reg_A] = DISK_SUCCESS;
+    _AB = word(FDD_PORT_CMD, FDD_PORT_CMD);
+    _DB = FDD_WRT_CMD;
+    _OUTPORT();
+    _AB = word(FDD_PORT_CMD, FDD_PORT_CMD);
+    _INPORT();
+    if (_DB) { 
+      _rA = DISK_SUCCESS;
      }
      else {
-      _Regs[_Reg_A] = DISK_ERROR;
+      _rA = DISK_ERROR;
      }
     _BIOS_RET();    
 }
 
 void _BIOS_SECTRAN() {
      //_Regs[_Reg_C] -> logical sector (from 0)
-     _Regs[_Reg_L] = _Regs[_Reg_C]+1; 
-     _Regs[_Reg_H] = 0;
+     _rL = _rC+1; 
+     _rH = 0;
     _BIOS_RET();    
 }
 

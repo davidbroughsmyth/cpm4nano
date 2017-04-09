@@ -12,9 +12,9 @@
     //LXXXXYY - load byte to memory
     if (mon_buffer[0]=='L') {
       if (hexcheck(1,6)) {
-        adr = kbd2word(1);
-        dat = kbd2byte(5);
-        _setMEM(adr,dat);
+        _AB = kbd2word(1);
+        _DB = kbd2byte(5);
+        _WRMEM();
         Serial.println("O.K.");
         goto MON_END;
       }
@@ -26,8 +26,9 @@
     //DXXXX - dump byte from memory
     if (mon_buffer[0]=='D') {
         if (hexcheck(1,4)) {
-          adr = kbd2word(1);
-          dat = _getMEM(adr);
+          _AB = kbd2word(1);
+          _RDMEM();
+          dat = _DB;
           Serial.println(dat, HEX);
           Serial.println(F("O.K."));
           goto MON_END;
@@ -163,7 +164,9 @@
                     }
                     else {
                       dat = chr2hex(inChar) + dat*16;
-                      _setMEM(adr, dat);
+                      _AB = adr;
+                      _DB = dat;
+                      _WRMEM();
                       hex_bytes++;            
                       adr++;        
                       hex_crc = hex_crc + dat;
@@ -204,7 +207,9 @@
         inChar = con_read();       
         count++;
         dat = uint8_t(inChar);
-        _setMEM(adr, dat);
+        _AB = adr;
+        _DB = dat;
+        _WRMEM();
         adr++;
         if (dat==0x1A) {
           //EOF
@@ -252,7 +257,9 @@
       if (con_ready()) {
         inChar = con_read();       
         dat = uint8_t(inChar);
-        _setMEM(adr, dat);
+        _AB = adr;
+        _DB = dat;
+        _WRMEM();
         adr++;
         count++;
         if (count==len) {
@@ -275,7 +282,9 @@
      tmp_byte=0;
      adr=tmp_word;
      for(count=0;count<len;count++) {
-      tmp_byte=tmp_byte+_getMEM(adr);
+      _AB = adr;
+      _RDMEM();
+      tmp_byte=tmp_byte+_DB;
       adr++;
      }
      Serial.println("");

@@ -613,19 +613,19 @@
 
     //C0
     void do0xC0 () { 
-      _I8080_RNZ();
+      _I8080_RCCC(B000);
       }
     void do0xC1 () { 
       _I8080_POP(_RP_BC);
       }
     void do0xC2 () { 
-      _I8080_JNZ();
+      _I8080_JCCC(B000);
       }
     void do0xC3 () { 
       _I8080_JMP();
       }
     void do0xC4 () { 
-      _I8080_CNZ();
+      _I8080_CCCC(B000);
       }
     void do0xC5 () { 
       _I8080_PUSH(_RP_BC);
@@ -637,19 +637,19 @@
       _I8080_RST(0);
       }
     void do0xC8 () { 
-      _I8080_RZ();
+      _I8080_RCCC(B001);
       }
     void do0xC9 () { 
       _I8080_RET();
       }
     void do0xCA () { 
-      _I8080_JZ();
+      _I8080_JCCC(B001);
       }
     void do0xCB () { 
       _I8080_JMP();
       }
     void do0xCC () { 
-      _I8080_CZ();
+      _I8080_CCCC(B001);
       }
     void do0xCD () { 
       _I8080_CALL();
@@ -663,19 +663,19 @@
 
     //D0
     void do0xD0 () { 
-      _I8080_RNC();
+      _I8080_RCCC(B010);
       }
     void do0xD1 () { 
       _I8080_POP(_RP_DE);
       }
     void do0xD2 () { 
-      _I8080_JNC();
+      _I8080_JCCC(B010);
       }
     void do0xD3 () { 
       _I8080_OUT();
       }
     void do0xD4 () { 
-      _I8080_CNC();
+      _I8080_CCCC(B010);
       }
     void do0xD5 () { 
       _I8080_PUSH(_RP_DE);
@@ -687,19 +687,19 @@
       _I8080_RST(2);
       }
     void do0xD8 () { 
-      _I8080_RC();
+      _I8080_RCCC(B011);
       }
     void do0xD9 () { 
       _I8080_RET();
       }
     void do0xDA () { 
-      _I8080_JC();
+      _I8080_JCCC(B011);
       }
     void do0xDB () { 
       _I8080_IN();
       }
     void do0xDC () { 
-      _I8080_CC();
+      _I8080_CCCC(B011);
       }
     void do0xDD () { 
       _I8080_CALL();
@@ -713,19 +713,19 @@
 
     //E0
     void do0xE0 () { 
-      _I8080_RPO();
+      _I8080_RCCC(B100);
       }
     void do0xE1 () { 
       _I8080_POP(_RP_HL);
       }
     void do0xE2 () { 
-      _I8080_JPO();
+      _I8080_JCCC(B100);
       }
     void do0xE3 () { 
       _I8080_XTHL();
       }
     void do0xE4 () { 
-      _I8080_CPO();
+      _I8080_CCCC(B100);
       }
     void do0xE5 () { 
       _I8080_PUSH(_RP_HL);
@@ -737,19 +737,19 @@
       _I8080_RST(4);
       }
     void do0xE8 () { 
-      _I8080_RPE();
+      _I8080_RCCC(B101);
       }
     void do0xE9 () { 
       _I8080_PCHL();
       }
     void do0xEA () { 
-      _I8080_JPE();
+      _I8080_JCCC(B101);
       }
     void do0xEB () { 
       _I8080_XCHG();
       }
     void do0xEC () { 
-      _I8080_CPE();
+      _I8080_CCCC(B101);
       }
     void do0xED () { 
       _I8080_CALL();
@@ -763,19 +763,19 @@
 
     //F0
     void do0xF0 () { 
-      _I8080_RP();
+      _I8080_RCCC(B110);
       }
     void do0xF1 () { 
       _I8080_POP(_RP_AF);
       }
     void do0xF2 () { 
-      _I8080_JP();
+      _I8080_JCCC(B110);
       }
     void do0xF3 () { 
       _I8080_DI();
       }
     void do0xF4 () { 
-      _I8080_CP();
+      _I8080_CCCC(B110);
       }
     void do0xF5 () { 
       _I8080_PUSH(_RP_AF);
@@ -787,19 +787,19 @@
       _I8080_RST(6);
       }
     void do0xF8 () { 
-      _I8080_RM();
+      _I8080_RCCC(B111);
       }
     void do0xF9 () { 
       _I8080_SPHL();
       }
     void do0xFA () { 
-      _I8080_JM();
+      _I8080_JCCC(B111);
       }
     void do0xFB () { 
       _I8080_EI();
       }
     void do0xFC () { 
-      _I8080_CM();
+      _I8080_CCCC(B111);
       }
     void do0xFD () { 
       _I8080_CALL();

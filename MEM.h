@@ -3,8 +3,12 @@
 *   Email:    support@foxylab.com
 *   Website:  https://acdc.foxylab.com
 */
-uint8_t _getMEM(uint16_t adr) {
-  uint8_t x;
+//address <- _AB
+//data -> _DB
+
+
+
+void _RDMEM() {
   uint32_t blk;
   uint32_t blk_tmp;
   uint16_t start_tmp;
@@ -12,8 +16,9 @@ uint8_t _getMEM(uint16_t adr) {
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
-  if (adr>MEM_MAX) {
-    return 0xFF;//not memory
+  if (_AB>MEM_MAX) {
+    _DB = 0xFF;//not memory
+    return;
   }
   //RAM mode set
   //RAM_MODE = 1;//SPI RAM
@@ -21,7 +26,7 @@ uint8_t _getMEM(uint16_t adr) {
   //RAM get/set
   switch (RAM_MODE) {
     case 0: //SD Card
-        blk = adr >> CACHE_LINE_POW; 
+        blk = _AB >> CACHE_LINE_POW; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -68,7 +73,8 @@ uint8_t _getMEM(uint16_t adr) {
           if (_buffer[CACHE_LINE_SIZE] != LRC) {
             MEM_ERR = true;
             exitFlag = true;//quit to monitor
-            return(0);
+            _DB = 0x00;
+            return;
           }
           cache_dirty[sel_blk] = false;
         }
@@ -84,20 +90,20 @@ uint8_t _getMEM(uint16_t adr) {
             sel_blk++;
           }
         }
-        adr = adr & (CACHE_LINE_SIZE - 1);
-        x = cache[cache_start[sel_blk] + adr];//read from cache
+        _DB = cache[cache_start[sel_blk] + (_AB & (CACHE_LINE_SIZE - 1))];//read from cache
         break;
     case 1: //SPI SRAM
-        x = readSPIRAM(adr);
+        //_DB = readSPIRAM(_AB);
         break;
     case 2: //on-board RAM
         
         break;
   }
-  return x;
 }
 
-void _setMEM(uint16_t adr, uint8_t  x) {
+//address <- _AB
+//data <- _DB
+void _WRMEM() {
   uint32_t blk;
   uint32_t blk_tmp;
   uint16_t start_tmp;
@@ -105,7 +111,8 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   uint8_t sel_blk;
   uint8_t res;
   uint8_t LRC;
-  if (x>MEM_MAX) {
+  if (_AB>MEM_MAX) {
+    return;
   }
   //RAM mode set
   //RAM_MODE = 1;//SPI RAM
@@ -113,7 +120,7 @@ void _setMEM(uint16_t adr, uint8_t  x) {
   //RAM get/set
   switch (RAM_MODE) {
     case 0: //SD Card
-        blk = adr >> CACHE_LINE_POW; 
+        blk = _AB >> CACHE_LINE_POW; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -175,16 +182,28 @@ void _setMEM(uint16_t adr, uint8_t  x) {
             sel_blk++;
           }
         }
-        adr = adr & (CACHE_LINE_SIZE - 1);
-        cache[cache_start[sel_blk] + adr] = x;//cache update
+        cache[cache_start[sel_blk] + (_AB & (CACHE_LINE_SIZE - 1))] = _DB;//cache update
         cache_dirty[sel_blk] = true;
         break;
     case 1: //SPI SRAM
-        writeSPIRAM(adr,x);
+        //writeSPIRAM(_AB,_DB);
         break;
     case 2: //on-board RAM
         //
         break;
   }
 }
+
+uint8_t _getMEM(uint16_t adr) {
+  _AB = adr;
+  _RDMEM();
+  return _DB;
+}
+
+void _setMEM(uint16_t adr, uint8_t dat) {
+  _AB = adr;
+  _DB = dat;
+  _WRMEM();
+}
+
 
