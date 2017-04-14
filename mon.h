@@ -445,7 +445,9 @@
       clrscr();//clear screen
       while (!_IPL()) {};//initial loader
       BIOS_INT = true;//BIOS intercept enabled
+      MON = false;
       call(_BIOS);//JMP TO BIOS
+      MON = true;
       DEBUG = true;//debug on
       goto MON_END;
     }

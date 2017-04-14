@@ -27,6 +27,7 @@
     Pretty 8080 Assembler - http://asdasd.rpg.fi/~svo/i8080/
     Cristian Maglie <c.maglie@bug.st> - SPI Master library for arduino
     William Greiman - Arduino Sd2Card Library
+    Christian Weichel <info@32leaves.net> - PS2Keyboard library
 */
 
 //TO DO
@@ -41,6 +42,7 @@ const uint8_t RAM_SIZE = 32;//RAM Size for CP/M, KBytes
 //include "TEST.h"
 #include "CPM_def.h"
 //#include "SpiRAM.h"
+#include "PS2Keyboard.h"
 
 //version
 const char VER_MAJOR = '0';
@@ -92,7 +94,7 @@ boolean MEM_ERR = false;
 //cache
 const uint8_t CACHE_LINE_POW = 6;//2^6 = 64 bytes
 const uint8_t CACHE_LINE_SIZE = 1 << CACHE_LINE_POW;//128 byte max
-const uint8_t CACHE_LINES_NUM = 8;
+const uint8_t CACHE_LINES_NUM = 6;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
 uint32_t cache_tag[CACHE_LINES_NUM];
 uint16_t cache_start[CACHE_LINES_NUM];
@@ -101,6 +103,9 @@ static uint8_t cache[CACHE_SIZE];
 const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;
 //----------------------------------------------------
 //console emulation
+uint8_t CON_IN = 0;
+//0 - terminal program
+//1 - PS/2 keyboard
 //console ports
 //SIO-A//SSM
 const uint8_t SIOA_CON_PORT_STATUS = 0x00;//status
@@ -158,7 +163,7 @@ uint8_t writeSD (uint32_t blk) {
   uint8_t res;
   res = card.writeBlock(blk, _buffer);
   if (!LED_on) {
-    digitalWrite(LED_pin, HIGH);
+    fastDigitalWrite(LED_pin, HIGH);
     LED_on = true;
   }
   LED_count = LED_delay;
@@ -187,8 +192,9 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
 //debug
 uint16_t breakpoint = 0xFFFF;
 boolean breakpointFlag = false;
-bool exitFlag = false;
+volatile bool exitFlag = false;
 char hex[2];
+boolean MON = true;
 //-----------------------------------------------------
 //keyboard monitor procedures
 char inChar;
@@ -206,38 +212,64 @@ const uint8_t CTRL_O_KEY = 0x0F;
 const uint8_t CTRL_X_KEY = 0x18;
 const uint8_t CTRL_SLASH_KEY = 0x1F;
 //console input variables
-const uint8_t CON_BUFFER_SIZE = 16;//console input buffer size
-volatile char con_buffer[CON_BUFFER_SIZE];//console input buffer
-volatile uint8_t con_chars = 0;//received chars number
+const uint8_t KBD_BUFFER_SIZE = 16;//console input buffer size
+volatile char kbd_buffer[KBD_BUFFER_SIZE];//console input buffer
+volatile uint8_t kbd_chars = 0;//received chars number
 
 //console input/output procedures
 char con_read() {
   char key;
   key = '\0';
-  cli();
-  if (con_chars > 0) {
-    key = con_buffer[con_chars - 1];
-    con_chars--;
+  //cli();
+  //if (con_chars > 0) {
+  if (Serial.available()>0) {
+    key = Serial.read();
+    if (!MON && ((uint8_t)key == CTRL_SLASH_KEY)) {
+      exitFlag = true;
+    }
+    //key = con_buffer[con_chars - 1];
+    //con_chars--;
   }
-  sei();
+  //sei();
   return key;
 }
 
 boolean con_ready() {
-  //cli();
-  if (con_chars>0) {
-    return true;
+  boolean res;
+  switch (CON_IN) {
+    case 0: //terminal
+            if (Serial.available()>0) {
+              res = true;
+            }
+            else {
+              res = false;
+            }
+            break;
+    case 1: //PS/2 keyboard
+            //cli();
+            if (kbd_chars>0) {
+              res = true;
+            }
+            else {
+              res = false;
+            }
+            //sei();
+            break;
   }
-  else {
-    return false;
-  }
-  //sei();
+  return res;
 }
 
 void con_flush() {
-    cli();
-    con_chars = 0;
-    sei();
+    switch (CON_IN) {
+      case 0: //terminal
+              Serial.flush();
+              break;
+      case 1: //PS/2 keyboard
+              //cli();
+              kbd_chars = 0;
+              //sei();
+              break;
+    }
 }
 
 //conversion functions
@@ -408,18 +440,19 @@ void call(word addr)
   _PC = addr;
   do
   {
+    noInterrupts ();
+    interrupts ();
     _AB = _PC;
     if (_AB ==  breakpoint) {
       DEBUG = true;
     }
+    if (!exitFlag) { break; }
     #include "BIOS_int.h"
-    if (!exitFlag) {
     _RDMEM();//(AB) -> INSTR  instruction fetch
     _IR = _DB;
     #include "debug.h" 
-    }
-    ((CmdFunction) pgm_read_word (&doCmdArray [_IR])) ();
-  } while (exitFlag == false);
+    ((CmdFunction) pgm_read_word (&doCmdArray [_IR])) (); //decode
+  } while (true);
   if (MEM_ERR) {
     MEM_ERR = false;
     clrscr();
@@ -456,7 +489,8 @@ void setup() {
   OCR1A = 312;//50 Hz
   TCCR1B |= (1 << WGM12);
   TCCR1B |= (1 << CS12) | (1 << CS10);//prescaler 1024
-  TIMSK1 |= (1 << OCIE1A);
+  TIMSK1 |= (1 << OCIE1A);//int enable
+  //TIMSK1 = 0;//int disable
   sei();
   //logo
   color(2);
@@ -481,6 +515,9 @@ asm (
   "jmp 1b        \n"
   );
 */  
+
+  
+  
   //flush serial buffer
   con_flush();
   //select memory type
@@ -520,25 +557,79 @@ asm (
   }
   //SD card init
   do {
-    card.init(SPI_HALF_SPEED, SS_SD_pin);
+    card.init(SPI_FULL_SPEED, SS_SD_pin);
     _cardsize = card.cardSize();
     if (_cardsize != 0) {
-      Serial.println(F("Card size: "));
+      Serial.println(F("CARD SIZE: "));
       Serial.print(_cardsize);
-      Serial.println(F(" sectors"));
+      Serial.println(F(" SECTORS"));
     }
     else {
       delay(250);
     }
   } while (_cardsize == 0);
-  //RAM test
-  Serial.println(F("RAM test..."));
+
+  //SD RAM AREA CLEARING
+  Serial.println(F("SD RAM AREA CLEARING..."));
+  uint8_t LRC;
+  uint32_t blk;
+  uint32_t blk_end;
+  blk = SD_MEM_OFFSET;
+  blk_end = blk + ( MEM_SIZE*1024U / CACHE_LINE_SIZE ) + 2;
+  do {
+    LRC = 0;//LRC reset
+    for(j=0;j<CACHE_LINE_SIZE;j++) {
+      _buffer[j] = 0;
+      LRC = 0 ^ LRC;//LRC calculation
+    }
+    _buffer[CACHE_LINE_SIZE] = LRC;//LRC add
+    res = writeSD(blk);
+    blk++;
+  } while (blk < blk_end);
+  //MEMORY SPEED TEST
+  /*
+  uint32_t xxlen;
+  uint16_t xxxx;
+  uint32_t xxcnt;
+  uint8_t xx;
+  xxcnt = 0;//counter
+  xxxx = 0xABCD;//seed
+  xxlen = 20000;//reads number
+  Serial.println(F("MEMORY SPEED TEST"));
+  Serial.println(F("RND: START"));
+  do {
+    xxxx ^= xxxx << 2;
+    xxxx ^= xxxx >> 7;
+    xxxx ^= xxxx << 7;
+    _AB = xxxx;
+    _RDMEM();
+    xx = _DB;
+    xxcnt++;
+  } while (xxcnt < xxlen);
+  Serial.println(F("RND: STOP"));
+  Serial.println(xxlen);//reads number
+  xxxx = 0;
+  xxlen = 100000;
+  Serial.println(F("SEQ: START"));
+  do {
+    _AB = xxxx;
+    _RDMEM();
+    xx = _DB;
+    xxxx++;
+    //Serial.println(rnd);
+    xxcnt++;
+  } while (xxcnt < xxlen);
+  Serial.println(F("SEQ: STOP"));
+  Serial.println(xxlen);//reads number
+  */
+  //RAM TEST
+  Serial.println(F("RAM TEST..."));
   RAM_AVAIL = mem_test(false);
   Serial.println("");  
   Serial.print(RAM_AVAIL, DEC);
-  Serial.println(F(" byte(s) of RAM are available"));
+  Serial.println(F(" BYTE(S) OF RAM ARE AVAILABLE"));
   //RAM clear
-  Serial.println(F("RAM clearing..."));
+  Serial.println(F("RAM CLEARING..."));
   for (i = 0; i < RAM_AVAIL; i++) {
     _AB = i;
     _DB = 0;
@@ -560,32 +651,22 @@ asm (
 //reset function
 void(* sys_reset) (void) = 0;
 
+boolean INTR = false;
+
 //Timer1 interrupt
 ISR(TIMER1_COMPA_vect) {
-  char key;
-  uint8_t i;
+  if ( INTR ){ return; }
+  INTR = true;
+  sei();
   //LED off
   if (LED_on) {
     LED_count--;
     if (LED_count == 0) {
       LED_on = false;
-      digitalWrite(LED_pin, LOW); //LED off
+      fastDigitalWrite(LED_pin, LOW); //LED off
     }
   }
-  //serial monitoring
-  if (Serial.available() > 0) {
-    key = Serial.read();
-    //chars count increment
-    if ((con_chars + 1) < CON_BUFFER_SIZE) {
-      con_chars++;
-    }
-    //chars shift
-    for (i = con_chars - 1; i > 0; i--) {
-      con_buffer[i] = con_buffer[i - 1];
-    }
-    //last char add
-    con_buffer[0] = key;
-  }
+  INTR = false;
 }
 
 void loop() {
