@@ -94,7 +94,7 @@ boolean MEM_ERR = false;
 //cache
 const uint8_t CACHE_LINE_POW = 6;//2^6 = 64 bytes
 const uint8_t CACHE_LINE_SIZE = 1 << CACHE_LINE_POW;//128 byte max
-const uint8_t CACHE_LINES_NUM = 6;
+const uint8_t CACHE_LINES_NUM = 8;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
 uint32_t cache_tag[CACHE_LINES_NUM];
 uint16_t cache_start[CACHE_LINES_NUM];
@@ -220,17 +220,19 @@ volatile uint8_t kbd_chars = 0;//received chars number
 char con_read() {
   char key;
   key = '\0';
-  //cli();
-  //if (con_chars > 0) {
-  if (Serial.available()>0) {
-    key = Serial.read();
-    if (!MON && ((uint8_t)key == CTRL_SLASH_KEY)) {
-      exitFlag = true;
-    }
-    //key = con_buffer[con_chars - 1];
-    //con_chars--;
+  switch (CON_IN) {
+      case 0: //terminal
+        if (Serial.available()>0) {
+          key = Serial.read();
+          if (!MON && ((uint8_t)key == CTRL_SLASH_KEY)) {
+            exitFlag = true;
+          }
+        } 
+        break;
+      case 1: //PS/2 keyboard
+        //
+        break;
   }
-  //sei();
   return key;
 }
 
@@ -440,13 +442,11 @@ void call(word addr)
   _PC = addr;
   do
   {
-    noInterrupts ();
-    interrupts ();
     _AB = _PC;
     if (_AB ==  breakpoint) {
       DEBUG = true;
     }
-    if (!exitFlag) { break; }
+    if (exitFlag) { break; } //go to monitor
     #include "BIOS_int.h"
     _RDMEM();//(AB) -> INSTR  instruction fetch
     _IR = _DB;
