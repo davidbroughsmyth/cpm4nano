@@ -1,4 +1,6 @@
 /*
+* Binary file uploader to emulator cpm4nano
+*
 * Copyright (C) 2017 - Alexey V. Voronin @ FoxyLab
 * Email:    support@foxylab.com
 * Website:  https://acdc.foxylab.com
@@ -16,6 +18,15 @@
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+*
+* Static compilation:
+* go build bin2nano.go   --> bin2nano.exe
+* 
+* Usage:
+* bin2nano com file.ext
+* com - COM port number (for example, 38)
+* file.ext - name and extension of file (for example, FILE.COM)
+*
 */
 
 package main
