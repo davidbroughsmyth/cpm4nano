@@ -35,8 +35,11 @@ func main() {
     const buf_size = 256
     var i uint32
     var crc uint8;
+	
+    com := "COM" + os.Args[1]
+    fmt.Printf("%s\n", com)		
 
-    filename := os.Args[1]
+    filename := os.Args[2]
     fmt.Printf("File: %s\n", filename)		
     data, err := ioutil.ReadFile(filename)
     if err != nil {
@@ -46,7 +49,7 @@ func main() {
     fmt.Printf("File size: %d\n", length)
     
     options := serial.OpenOptions{
-    	PortName: "COM33",
+    	PortName: com,
     	BaudRate: 9600,
     	DataBits: 8,
     	StopBits: 1,
