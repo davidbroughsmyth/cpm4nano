@@ -35,7 +35,7 @@
 const uint8_t MEM_SIZE = 64;//System RAM Size, KBytes
 const uint16_t MEM_MAX = (MEM_SIZE-1)*1024U + 1023U;//maximum system RAM address
 uint32_t RAM_AVAIL = 0x10000L;//available RAM Size, KBytes (64 KBytes maximum)
-const uint8_t RAM_SIZE = 32;//RAM Size for CP/M, KBytes
+const uint8_t RAM_SIZE = 64;//RAM Size for CP/M, KBytes
 
 #include <avr/pgmspace.h>
 #include "Sd2Card.h"
