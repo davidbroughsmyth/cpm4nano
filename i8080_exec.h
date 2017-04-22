@@ -185,20 +185,7 @@ void out_port(uint8_t port, uint8_t dat) {
         //blk = _getMEM(_FDD_SECTOR)-1;
         blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
-        switch (FDD_REG_DRV) {
-          case 0:
-            blk = blk +  SD_FDD_A_OFFSET;
-            break;
-          case 1:
-            blk = blk +  SD_FDD_B_OFFSET;
-            break;
-          case 2:
-            blk = blk +  SD_FDD_C_OFFSET;
-            break;
-          case 3:
-            blk = blk +  SD_FDD_D_OFFSET;
-            break;
-        }
+        blk = blk +  SD_FDD_OFFSET[FDD_REG_DRV];
         res = readSD(blk, 0);
         if (res == 1) {
           for (i = 0 ; i < SD_BLK_SIZE ; i++) {
@@ -217,20 +204,7 @@ void out_port(uint8_t port, uint8_t dat) {
         //sector write
         blk = FDD_REG_SEC - 1L;
         blk = blk + FDD_REG_TRK * TRACK_SIZE;
-        switch (FDD_REG_DRV) {
-          case 0:
-            blk = blk +  SD_FDD_A_OFFSET;
-            break;
-          case 1:
-            blk = blk +  SD_FDD_B_OFFSET;
-            break;
-          case 2:
-            blk = blk +  SD_FDD_C_OFFSET;
-            break;
-          case 3:
-            blk = blk +  SD_FDD_D_OFFSET;
-            break;
-        }
+        blk = blk +  SD_FDD_OFFSET[FDD_REG_DRV];
         for (i = 0 ; i < SD_BLK_SIZE ; i++) {
           _dsk_buffer[i] = _getMEM(FDD_REG_DMA + i);
         }

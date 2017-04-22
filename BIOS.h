@@ -44,6 +44,7 @@ boolean _IPL() {
   uint16_t i;
   uint16_t j;
   uint16_t k;
+  uint8_t l;
   uint8_t checksum = 0x00;
   uint8_t res;
   uint8_t d8;
@@ -120,61 +121,78 @@ boolean _IPL() {
         Serial.print(hex);
      }
      Serial.println("");
-  
-    i = 0;
-    i = i + _DPBASE;      
-    _AB = i + 0;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 1;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 2;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 3;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 4;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 5;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 6;
-    _DB = 0x00;
-    _WRMEM();
-    _AB = i + 7;
-    _DB = 0x00;
-    _WRMEM();
-    //DIRBUF
-    _AB = i + 8;
-    _DB = lowByte(_DIRBUF);
-    _WRMEM();
-    _AB = i + 9;
-    _DB = highByte(_DIRBUF);
-    _WRMEM();
-    //DPB
-    _AB = i + 10;
-    _DB = lowByte(_DPBLK);
-    _WRMEM();
-    _AB = i + 11;
-    _DB = highByte(_DPBLK);
-    _WRMEM();
-    //CSV
-    _AB = i + 12;
-    _DB = lowByte(_CHK00);
-    _WRMEM();
-    _AB = i + 13;
-    _DB = highByte(_CHK00);
-    _WRMEM();
-    //ALV
-    _AB = i + 14;
-    _DB = lowByte(_ALL00);
-    _WRMEM();
-    _AB = i + 15;
-    _DB = highByte(_ALL00);
-    _WRMEM();
+
+    i = _DPBASE;
+    for (l=0; l<FDD_NUM; l++) {     
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = 0x00;
+      _WRMEM();
+      //DIRBUF
+      i++;
+      _AB = i;
+      _DB = lowByte(_DIRBUF);
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = highByte(_DIRBUF);
+      _WRMEM();
+      //DPB
+      i++;
+      _AB = i;
+      _DB = lowByte(_DPBLK);
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = highByte(_DPBLK);
+      _WRMEM();
+      //CSV
+      i++;
+      _AB = i;
+      _DB = lowByte(_CHK00);
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = highByte(_CHK00);
+      _WRMEM();
+      //ALV
+      i++;
+      _AB = i;
+      _DB = lowByte(_ALL00);
+      _WRMEM();
+      i++;
+      _AB = i;
+      _DB = highByte(_ALL00);
+      _WRMEM();
+      i++;
+    }
     //DPB init
     i = _DPBLK;
     //SPT

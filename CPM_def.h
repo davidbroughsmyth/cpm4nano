@@ -9,11 +9,11 @@
 
 //---------------------------------------------------
 //FDD constants
-const uint32_t SD_FDD_A_OFFSET = 0x0001000; 
-const uint32_t SD_FDD_B_OFFSET = 0x0002000; 
-const uint32_t SD_FDD_C_OFFSET = 0x0003000; 
-const uint32_t SD_FDD_D_OFFSET = 0x0004000; 
-const uint8_t FDD_NUM = 4; 
+//начальные значения смещения для дисководов
+const uint32_t SD_DISKS_OFFSET = 0x0001000;
+const uint32_t SD_DISK_SIZE = 0x0001000;
+const uint8_t FDD_NUM = 4;//FDDs number
+uint32_t  SD_FDD_OFFSET[FDD_NUM];//FDDs offsets (in sectors) 
 const uint8_t CPM_EMPTY = 0xE5; //empty byte (disk)
 const uint16_t SECTOR_SIZE = 128;
 const uint16_t TRACK_SIZE = 26;

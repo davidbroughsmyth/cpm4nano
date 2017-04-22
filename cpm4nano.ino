@@ -41,8 +41,8 @@ const uint8_t RAM_SIZE = 64;//RAM Size for CP/M, KBytes
 #include "Sd2Card.h"
 //include "TEST.h"
 #include "CPM_def.h"
-//#include "SpiRAM.h"
 #include "PS2Keyboard.h"
+#include "EEPROM.h"
 
 //version
 const char VER_MAJOR = '0';
@@ -170,7 +170,7 @@ uint8_t writeSD (uint32_t blk) {
   return res;
 }
 //----------------------------------------------------
-//SPI RAM read/write
+//FRAM read/write
 /*
 const uint8_t SS_SPIRAM_pin = 6; //SS SPI RAM pin D6
 const uint16_t SPIRAM_DELAY_US = 100;
@@ -335,6 +335,26 @@ char upCase(char symbol) {
 }
 
 //-----------------------------------------------------
+//EEPRPOM
+//EEPROM init
+const int EEPROM_SIZE = 256;
+const int EEPROM_DRIVES = 0x00;
+int EEPROM_idx;
+void EEPROM_init() {
+  //EEPROM clearing
+       for (EEPROM_idx = 0 ; EEPROM_idx < EEPROM_SIZE ; EEPROM_idx++) {
+          EEPROM.write(EEPROM_idx, 0);
+       }
+       //settings init
+       for (EEPROM_idx = EEPROM_DRIVES ; EEPROM_idx < (EEPROM_DRIVES+FDD_NUM) ; EEPROM_idx++) {
+        EEPROM.write(EEPROM_idx, uint8_t(EEPROM_idx-EEPROM_DRIVES));
+       }
+       //write signature to EEPROM
+       //0xFE - 0x55
+       EEPROM.write(0xFE, 0x55);
+       //0xFF - 0xAA
+       EEPROM.write(0xFF, 0xAA);
+}
 
 
 #include "MEM.h"
@@ -464,6 +484,7 @@ void call(word addr)
 void setup() {
   uint32_t i;
   uint16_t j;
+  uint8_t k;
   uint32_t _cardsize;
   uint8_t res;
   bool RAMTestPass = true;
@@ -516,8 +537,15 @@ asm (
   );
 */  
 
-  
-  
+  //disks mount
+  //EEPROM checking
+  if ((EEPROM.read(0xFE) != 0x55) || (EEPROM.read(0xFF) != 0xAA)) {
+     //EEPROM init
+     EEPROM_init();
+  }
+  for (k=0; k<FDD_NUM; k++) {
+    SD_FDD_OFFSET[k] = SD_DISKS_OFFSET + EEPROM.read(k)*SD_DISK_SIZE; 
+  }  
   //flush serial buffer
   con_flush();
   //select memory type

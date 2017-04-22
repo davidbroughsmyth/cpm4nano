@@ -336,18 +336,6 @@
       }
     }
 
-    //Z - Z80 Emulation On/Off
-    if (mon_buffer[0]=='Z') {
-      Z80 = !Z80;
-      if (Z80) {
-        Serial.println(F("Z80 Emulation ON"));
-      }
-      else {
-        Serial.println(F("Z80 Emulation OFF"));
-     }
-     goto MON_END;
-    }
-
     //GXXXX - run
     if (mon_buffer[0]=='G') {
       if (hexcheck(1,4)) {
@@ -370,13 +358,13 @@
       uint8_t res;
       adr = kbd2word(2);
       switch (mon_buffer[1]) {
-        case 'A': adr = adr + SD_FDD_A_OFFSET;
+        case 'A': adr = adr + SD_FDD_OFFSET[0];
                   break;
-        case 'B': adr = adr + SD_FDD_B_OFFSET;
+        case 'B': adr = adr + SD_FDD_OFFSET[1];
                   break;
-        case 'C': adr = adr + SD_FDD_C_OFFSET;
+        case 'C': adr = adr + SD_FDD_OFFSET[2];
                   break;
-        case 'D': adr = adr + SD_FDD_D_OFFSET;
+        case 'D': adr = adr + SD_FDD_OFFSET[3];
                   break;
       }
       res = card.readBlock(adr, _dsk_buffer, 0);
@@ -391,21 +379,21 @@
 
     //X - format disk
     if (mon_buffer[0]=='X') {
-      uint8_t diskno;
+      uint8_t driveno;
       uint32_t start;
       uint8_t res;
-      diskno = 0xFF;
+      driveno = 0xFF;
       switch (mon_buffer[1]) {
-        case 'A': diskno = 0;
+        case 'A': driveno = 0;
              break;
-        case 'B': diskno = 1;
+        case 'B': driveno = 1;
              break;
-        case 'C': diskno = 2;
+        case 'C': driveno = 2;
              break;
-        case 'D': diskno = 3;
+        case 'D': driveno = 3;
              break;
       }
-      if (diskno == 0xFF) {
+      if (driveno == 0xFF) {
         color(1);
         Serial.println(F("Invalid disk!"));
         color(9);
@@ -414,16 +402,7 @@
         Serial.println(F("Format disk"));
         Serial.println("");
         //format
-        switch (diskno) {
-          case 0: start = SD_FDD_A_OFFSET;
-                  break;
-          case 1: start = SD_FDD_B_OFFSET;
-                  break;
-          case 2: start = SD_FDD_C_OFFSET;
-                  break;
-          case 3: start = SD_FDD_D_OFFSET;
-                  break;
-        }
+        start = SD_FDD_OFFSET[driveno];
         for (uint32_t i = 0; i<SD_BLK_SIZE; i++) {
           _dsk_buffer[i] = CPM_EMPTY;
         }
@@ -490,6 +469,84 @@
       } while (go);
      goto MON_END;
     }
+
+    //EEPROM settings reset
+    if (mon_buffer[0]=='E') {
+       EEPROM_init();
+    }
+
+    //Z - insert floppy in drive
+    //ZXYY  X - drives - A, B, C, D    Y - disks - 00..99
+     if (mon_buffer[0]=='Z') {
+      uint8_t driveno;
+      uint8_t diskno;
+      uint32_t start;
+      uint8_t res;
+      diskno = 0xFF;//disk number
+      driveno = 0xFF;//drive number
+      switch (mon_buffer[1]) {
+        case 'A': driveno = 0;
+             break;
+        case 'B': driveno = 1;
+             break;
+        case 'C': driveno = 2;
+             break;
+        case 'D': driveno = 3;
+             break;
+      }
+      if (driveno == 0xFF) {
+        color(1);
+        Serial.println(F("INVALID DRIVE!"));
+        color(9);
+      }
+      else {
+            //disk number input
+            switch (mon_buffer[2]) {
+              case '0'...'9': diskno = (uint8_t(mon_buffer[2]) - uint8_t('0'))*10;
+                    break;
+              default: diskno = 0xFF;
+                    break;
+            }
+            switch (mon_buffer[3]) {
+              case '0'...'9': diskno = uint8_t(mon_buffer[3]) - uint8_t('0') + diskno;
+                    break;
+              default: diskno = 0xFF;
+            }
+            if (diskno == 0xFF) {
+              color(1);
+              Serial.println(F("INVALID DISK!"));
+              color(9);
+            }
+            else {
+               //insert disk in drive
+               Serial.print(F("INSERT DISK "));
+               Serial.print(diskno, DEC);
+               Serial.print(F(" IN DRIVE "));
+               Serial.println(mon_buffer[1]);
+               //Serial.println(SD_DISKS_OFFSET + diskno*SD_DISK_SIZE, HEX);
+               SD_FDD_OFFSET[driveno] =  SD_DISKS_OFFSET + diskno*SD_DISK_SIZE;
+               //save diskno in EEPROM
+               //EEPROM cells
+               //0xFE - 0x55
+               //0xFF - 0xAA
+               //0x02 - drive A
+               //0x03 - drive B
+               //0x04 - drive C
+               //0x05 - drive D
+               //check EEPROM O.K.
+               //write signature to EEPROM
+               //0xFE - 0x55
+               if ((EEPROM.read(0xFE) != 0x55) || (EEPROM.read(0xFF) != 0xAA)) {
+                //EEPROM init
+                EEPROM_init();
+               }
+                if (EEPROM.read(0x00+driveno) != diskno) {
+                  EEPROM.write(0x00+driveno, diskno);  
+               }
+            }
+      }
+      goto MON_END;
+     }
 
 MON_INVALID:
   Serial.println(F("???"));//invalid command
