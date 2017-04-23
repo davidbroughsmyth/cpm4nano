@@ -422,7 +422,9 @@
     if (mon_buffer[0]=='C') {
       DEBUG = false;//debug off 
       clrscr();//clear screen
+      CPM_logo = true;
       while (!_IPL()) {};//initial loader
+      CPM_logo = false;
       BIOS_INT = true;//BIOS intercept enabled
       MON = false;
       call(_BIOS);//JMP TO BIOS

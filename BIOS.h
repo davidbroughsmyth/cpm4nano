@@ -49,6 +49,7 @@ boolean _IPL() {
   uint8_t res;
   uint8_t d8;
   boolean success = false;
+  if (CPM_logo) {
   Serial.print(RAM_SIZE, DEC);
   Serial.println("K SYSTEM");
   Serial.print("CBASE: ");
@@ -61,10 +62,11 @@ boolean _IPL() {
   Serial.write(0x09);
   Serial.print(_BIOS_LO, HEX);
   Serial.print(" ... ");
-  Serial.println(_BIOS_HI, HEX);  
-  _SP = SP_INIT;
+  Serial.println(_BIOS_HI, HEX);
   Serial.println("");
   Serial.println(F("IPL"));
+  }  
+  _SP = SP_INIT;
   FDD_REG_DRV = 0;
   FDD_REG_TRK = 0;
   FDD_REG_SEC = 1;
@@ -82,7 +84,7 @@ boolean _IPL() {
           _WRMEM();
         }   
       }  
-      out_port(SIOA_CON_PORT_DATA, '.');
+      if (CPM_logo) { out_port(SIOA_CON_PORT_DATA, '.'); }
   }
   
   //checksum checking
@@ -94,11 +96,13 @@ boolean _IPL() {
         checksum = checksum + d8;
       }
   }
-  Serial.println("");
-  Serial.print(F("Checksum: "));
-  sprintf(hex, "%02X", checksum);
-  Serial.print(hex);
-  Serial.print(" ");
+  if (CPM_logo) {
+    Serial.println("");
+    Serial.print(F("Checksum: "));
+    sprintf(hex, "%02X", checksum);
+    Serial.print(hex);
+    Serial.print(" ");
+  }
   if (checksum != CPMSYS_CS) {
      Serial.println(F("ERR!"));
      success = false;
@@ -107,6 +111,7 @@ boolean _IPL() {
      Serial.println(F("O.K.!"));
      success = true;
 
+     if (CPM_logo) {
      for(j=CPM_LBL_START;j<(CPM_LBL_START+CPM_LBL_LEN);j++) {
         _AB = CBASE+j;
         _RDMEM();
@@ -121,7 +126,7 @@ boolean _IPL() {
         Serial.print(hex);
      }
      Serial.println("");
-
+     }
     i = _DPBASE;
     for (l=0; l<FDD_NUM; l++) {     
       _AB = i;
@@ -303,8 +308,10 @@ void _GOCPM(boolean jmp) {
 
 void _BOOT() {
     //message BOOT
-    Serial.println("");
-    Serial.println(F("BOOT"));
+    if (CPM_logo) {
+      Serial.println("");
+      Serial.println(F("BOOT"));
+    }
     _AB = IOBYTE;
     _DB = 0x00;
     _WRMEM();//IOBYTE clear
@@ -318,8 +325,10 @@ void _BOOT() {
 void _WBOOT() {
   boolean load;
     //message WBOOT
-    Serial.println("");
-    Serial.println(F("WBOOT"));
+    if (CPM_logo) {
+      Serial.println("");
+      Serial.println(F("WBOOT"));
+    }
     //USE SPACE BELOW BUFFER FOR STACK
     _SP = 0x80;
     do {

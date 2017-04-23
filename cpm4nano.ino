@@ -195,6 +195,7 @@ boolean breakpointFlag = false;
 volatile bool exitFlag = false;
 char hex[2];
 boolean MON = true;
+boolean CPM_logo = true;
 //-----------------------------------------------------
 //keyboard monitor procedures
 char inChar;
