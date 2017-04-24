@@ -337,9 +337,20 @@ char upCase(char symbol) {
 
 //-----------------------------------------------------
 //EEPRPOM
+/*
+EEPROM cells
+               0xFE - 0x55
+               0xFF - 0xAA
+               0x00 - drive A
+               0x01 - drive B
+               0x02 - drive C
+               0x03 - drive D
+               0x04 - sense sw
+*/
 //EEPROM init
 const int EEPROM_SIZE = 256;
 const int EEPROM_DRIVES = 0x00;
+const int EEPROM_SENSE_SW = EEPROM_DRIVES+FDD_NUM;
 int EEPROM_idx;
 void EEPROM_init() {
   //EEPROM clearing
@@ -350,12 +361,18 @@ void EEPROM_init() {
        for (EEPROM_idx = EEPROM_DRIVES ; EEPROM_idx < (EEPROM_DRIVES+FDD_NUM) ; EEPROM_idx++) {
         EEPROM.write(EEPROM_idx, uint8_t(EEPROM_idx-EEPROM_DRIVES));
        }
+       //sense switches 0ff
+       EEPROM.write(EEPROM_SENSE_SW, 0x00);
        //write signature to EEPROM
        //0xFE - 0x55
        EEPROM.write(0xFE, 0x55);
        //0xFF - 0xAA
        EEPROM.write(0xFF, 0xAA);
 }
+//------------------------------------------------------
+//ALTAIR
+uint8_t SENSE_SW = 0x00;//Altair/IMSAI sense switch default off
+const uint8_t SENSE_SW_PORT = 0xFF;//Altair/IMSAI sense switch port
 
 
 #include "MEM.h"
@@ -538,15 +555,18 @@ asm (
   );
 */  
 
-  //disks mount
+  
   //EEPROM checking
   if ((EEPROM.read(0xFE) != 0x55) || (EEPROM.read(0xFF) != 0xAA)) {
      //EEPROM init
      EEPROM_init();
   }
+  //disks mount
   for (k=0; k<FDD_NUM; k++) {
     SD_FDD_OFFSET[k] = SD_DISKS_OFFSET + EEPROM.read(k)*SD_DISK_SIZE; 
   }  
+  //sense switch
+  SENSE_SW = EEPROM.read(EEPROM_SENSE_SW);
   //flush serial buffer
   con_flush();
   //select memory type

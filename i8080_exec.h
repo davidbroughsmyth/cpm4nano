@@ -93,9 +93,12 @@ uint8_t in_port(uint8_t port) {
     case SIOA_CON_PORT_STATUS:
       //bit 1 - ready to out (Altair)
       //bit 5 - ready to in (Altair)
-      dat = 0x02;
+      //bit 7 - ready to out (IMSAI)
+      //bit 0 - ready to in (IMSAI)
+      dat = 0x02 | 0x80;
       if (con_ready()) {
         dat = dat | 0x20;
+        dat = dat | 0x01;
       }
       break;
     case SIOA_CON_PORT_DATA:
@@ -146,6 +149,10 @@ uint8_t in_port(uint8_t port) {
     case FDD_PORT_DRV:
       //drive select
       dat = FDD_REG_DRV;
+      break;
+    case SENSE_SW_PORT:
+      //Altair/IMSAI sense switch
+      dat = SENSE_SW;
       break;
     case IN_PORT:
       dat = digitalRead(IN_pin);

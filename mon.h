@@ -358,14 +358,8 @@
       uint8_t res;
       adr = kbd2word(2);
       switch (mon_buffer[1]) {
-        case 'A': adr = adr + SD_FDD_OFFSET[0];
-                  break;
-        case 'B': adr = adr + SD_FDD_OFFSET[1];
-                  break;
-        case 'C': adr = adr + SD_FDD_OFFSET[2];
-                  break;
-        case 'D': adr = adr + SD_FDD_OFFSET[3];
-                  break;
+             case 'A'...char(uint8_t('A')+FDD_NUM-1): adr = adr + SD_FDD_OFFSET[uint8_t(mon_buffer[1]) - uint8_t('A')];
+             break;
       }
       res = card.readBlock(adr, _dsk_buffer, 0);
       Serial.println(res, DEC);
@@ -384,13 +378,7 @@
       uint8_t res;
       driveno = 0xFF;
       switch (mon_buffer[1]) {
-        case 'A': driveno = 0;
-             break;
-        case 'B': driveno = 1;
-             break;
-        case 'C': driveno = 2;
-             break;
-        case 'D': driveno = 3;
+        case 'A'...char(uint8_t('A')+FDD_NUM-1): driveno = (uint8_t(mon_buffer[1]) - uint8_t('A'));
              break;
       }
       if (driveno == 0xFF) {
@@ -408,7 +396,7 @@
         }
         for (uint32_t i = 0; i<DISK_SIZE*TRACK_SIZE; i++) {
           Serial.print('\r');
-          Serial.print(F("Sector "));
+          Serial.print(F("SECTOR "));
           Serial.print(i,DEC);
           res = card.writeBlock(i+start, _dsk_buffer);
         }
@@ -445,8 +433,8 @@
       uint32_t temp;
       con_flush();
       clrscr();//clear screen
-      Serial.println("RAM TEST...");
-      Serial.println("PRESS ANY KEY TO BREAK");
+      Serial.println(F("RAM TEST..."));
+      Serial.println(F("PRESS ANY KEY TO BREAK"));
       do {      
         xy(3,0);
         clrlin();
@@ -462,11 +450,11 @@
           pass_cnt++;
           Serial.println("");
           clrlin();
-          Serial.print("PASS ");
+          Serial.print(F("PASS "));
           Serial.print(pass_cnt, DEC);
-          Serial.print(" RAM: ");
+          Serial.print(F(" RAM: "));
           Serial.print(RAM_AVAIL, DEC);
-          Serial.print(" BYTE(S)");
+          Serial.print(F(" BYTE(S)"));
         }
       } while (go);
      goto MON_END;
@@ -475,6 +463,8 @@
     //EEPROM settings reset
     if (mon_buffer[0]=='E') {
        EEPROM_init();
+       Serial.println(F("O.K."));
+       goto MON_END;
     }
 
     //Z - insert floppy in drive
@@ -487,13 +477,7 @@
       diskno = 0xFF;//disk number
       driveno = 0xFF;//drive number
       switch (mon_buffer[1]) {
-        case 'A': driveno = 0;
-             break;
-        case 'B': driveno = 1;
-             break;
-        case 'C': driveno = 2;
-             break;
-        case 'D': driveno = 3;
+        case 'A'...char(uint8_t('A')+FDD_NUM-1): driveno = (uint8_t(mon_buffer[1]) - uint8_t('A'));
              break;
       }
       if (driveno == 0xFF) {
@@ -549,6 +533,22 @@
       }
       goto MON_END;
      }
+
+     //Altair/IMSAI sense switch (input port 0xFF)
+     if (mon_buffer[0]=='K') {
+      if (hexcheck(1,2)) {
+        SENSE_SW = kbd2byte(1);
+        if ((EEPROM.read(0xFE) != 0x55) || (EEPROM.read(0xFF) != 0xAA)) {
+                EEPROM_init();
+        }
+        EEPROM.write(EEPROM_SENSE_SW, SENSE_SW);
+        Serial.println(F("O.K."));
+        goto MON_END;
+      }
+      else {
+        goto MON_INVALID;
+      }
+    }
 
 MON_INVALID:
   Serial.println(F("???"));//invalid command
