@@ -555,7 +555,7 @@
     //Yxy - switch block x to bank y
     if (mon_buffer[0]=='Y') {
       if (hexcheck(1,2)) {
-        if (kbd2nibble(2)<BANKS_NUM) {
+        if (kbd2nibble(2)<MMU_BANKS_NUM) {
           MMU_MAP[kbd2nibble(1)] = kbd2nibble(2);
           Serial.print(F("BLOCK "));
           Serial.print(kbd2nibble(1), HEX);

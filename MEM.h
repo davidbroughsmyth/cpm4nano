@@ -3,6 +3,46 @@
 *   Email:    support@foxylab.com
 *   Website:  https://acdc.foxylab.com
 */
+
+const uint32_t SD_MEM_OFFSET = 0x070000;//memory offset in SD-card
+boolean MEM_ERR = false;//LRC memory error flag
+
+//CACHE
+//constants
+const uint16_t CACHE_LINE_SIZE = 64;//cache line size
+const uint8_t CACHE_LINES_NUM = 8;//cache lines number
+const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;//total cache size
+const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;//empty cache line flag
+//arrays
+static uint8_t cache[CACHE_SIZE];//cache
+uint32_t cache_tag[CACHE_LINES_NUM];//cache line tag (block #)
+uint16_t cache_start[CACHE_LINES_NUM];//cache line start
+boolean cache_dirty[CACHE_LINES_NUM];//cache line dirty flag
+
+//MMU
+//ports
+const uint8_t MMU_BLOCK_SEL_PORT = 0xD0;//block select port
+const uint8_t MMU_BANK_SEL_PORT = 0xD1;//bank select port
+//registers
+uint8_t MMU_BLOCK_SEL_REG = 0x00;//block select register
+uint8_t MMU_BANK_SEL_REG = 0x00;//bank register
+//constants
+const uint8_t MMU_BANKS_NUM = 8;//banks number
+const uint16_t MMU_BLOCK_SIZE = 4096;//4096 bytes - block size 
+const uint8_t MMU_BLOCKS_NUM = 65536UL / MMU_BLOCK_SIZE;//blocks number
+//map
+uint8_t MMU_MAP[MMU_BLOCKS_NUM];//memory banking map
+//set bank for block
+void bank_set(uint8_t block, uint8_t bank)
+{
+  MMU_MAP[block] = bank;
+}
+//get bank for block
+uint8_t bank_get(uint8_t block)
+{
+  return MMU_MAP[block];
+}
+
 //address <- _AB
 //data -> _DB
 

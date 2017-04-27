@@ -43,6 +43,7 @@ const uint8_t RAM_SIZE = 64;//RAM Size for CP/M, KBytes
 #include "CPM_def.h"
 #include "PS2Keyboard.h"
 #include "EEPROM.h"
+#include "ESC.h"
 
 //version
 const char VER_MAJOR = '0';
@@ -62,6 +63,7 @@ volatile uint8_t _DB; //data bus buffer
 volatile uint16_t _AB; //data bus buffer
 bool INTE;
 boolean DEBUG;//debug mode flag
+volatile bool exitFlag = false;
 //SZ000P00  SZP flags lookup table
 const static uint8_t PROGMEM SZP_table[] = {
   B01000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
@@ -81,27 +83,6 @@ const static uint8_t PROGMEM SZP_table[] = {
   B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
   B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
 };
-//---------------------------------------------------
-//MEMORY
-const static uint8_t PROGMEM memtest_table[] = {
-  0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
-};
-const uint16_t MEMTEST_TABLE_SIZE = 33;
-uint8_t RAM_TEST_MODE;//memory check mpde
-const uint32_t SD_MEM_OFFSET = 0x070000;//memory offset in SD-card
-boolean MEM_ERR = false;//LRC memory error flag
-//----------------------------------------------------
-//CACHE
-//constants
-const uint16_t CACHE_LINE_SIZE = 64;//cache line size
-const uint8_t CACHE_LINES_NUM = 8;//cache lines number
-const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;//total cache size
-const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;//empty cache line flag
-//arrays
-static uint8_t cache[CACHE_SIZE];//cache
-uint32_t cache_tag[CACHE_LINES_NUM];//cache line tag (block #)
-uint16_t cache_start[CACHE_LINES_NUM];//cache line start
-boolean cache_dirty[CACHE_LINES_NUM];//cache line dirty flag
 //----------------------------------------------------
 //CONSOLE
 uint8_t CON_IN = 0;
@@ -169,6 +150,20 @@ uint8_t writeSD (uint32_t blk) {
   return res;
 }
 //----------------------------------------------------
+//ALTAIR
+uint8_t SENSE_SW = 0x00;//Altair/IMSAI sense switch default off
+const uint8_t SENSE_SW_PORT = 0xFF;//Altair/IMSAI sense switch port
+#include "MEM.h"
+#include "i8080_exec.h"
+//---------------------------------------------------
+//MEMORY
+const static uint8_t PROGMEM memtest_table[] = {
+  0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
+};
+const uint16_t MEMTEST_TABLE_SIZE = 33;
+uint8_t RAM_TEST_MODE;//memory check mpde
+
+
 //FRAM read/write
 /*
 const uint8_t SS_SPIRAM_pin = 6; //SS SPI RAM pin D6
@@ -187,14 +182,6 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
   delayMicroseconds(SPIRAM_DELAY_US);
 }
 */
-//---------------------------------------------------
-//DEBUG
-uint16_t breakpoint = 0xFFFF;
-boolean breakpointFlag = false;
-volatile bool exitFlag = false;
-char hex[2];
-boolean MON = true;
-boolean CPM_logo = true;
 //-----------------------------------------------------
 //keyboard monitor procedures
 char inChar;
@@ -202,6 +189,7 @@ const int MON_BUFFER_SIZE = 32;//monitor input buffer size
 char mon_buffer[MON_BUFFER_SIZE + 1];
 int mon_ptr = 0;
 const uint32_t SET_PAUSE = 5000;//pause (msecs)
+boolean MON = true;
 //keys codes
 const uint8_t BS_KEY = 0x08;
 const uint8_t DEL_KEY = 0x7F;
@@ -374,131 +362,13 @@ void EEPROM_init() {
        EEPROM.write(0xFF, 0xAA);
 }
 //------------------------------------------------------
-//ALTAIR
-uint8_t SENSE_SW = 0x00;//Altair/IMSAI sense switch default off
-const uint8_t SENSE_SW_PORT = 0xFF;//Altair/IMSAI sense switch port
-//------------------------------------------------------
-//MMU
-//ports
-const uint8_t MMU_BLOCK_SEL_PORT = 0xD0;//block select port
-const uint8_t MMU_BANK_SEL_PORT = 0xD1;//bank select port
-//registers
-uint8_t MMU_BLOCK_SEL_REG = 0x00;//block select register
-uint8_t MMU_BANK_SEL_REG = 0x00;//bank register
-//constants
-const uint8_t BANKS_NUM = 8;//banks number
-const uint16_t MMU_BLOCK_SIZE = 4096;//4096 bytes - block size 
-const uint8_t MMU_BLOCKS_NUM = 65536UL / MMU_BLOCK_SIZE;//blocks number
-//map
-uint8_t MMU_MAP[MMU_BLOCKS_NUM];//memory banking map
-//set bank for block
-void bank_set(uint8_t block, uint8_t bank)
-{
-  MMU_MAP[block] = bank;
-}
-//get bank for block
-uint8_t bank_get(uint8_t block)
-{
-  return MMU_MAP[block];
-}
-//----------------------------------------------------------------
 
-#include "MEM.h"
-#include "i8080_exec.h"
-#include "ESC.h"
-#include "BIOS.h"
-#include "i8080_fns.h"
-
-
-uint32_t mem_test(boolean brk)
-{
-  uint32_t i;
-  uint16_t j;
-  uint32_t res;
-  res = 0x10000L;
-  //RAM write
-  j = 0;
-  for (i = 0; i <= 0xFFFF; i++) {
-    _AB = i;
-    _DB = pgm_read_byte_near(memtest_table + j);
-    _WRMEM();
-    if ((i % 8192) == 0) {
-      Serial.print(".");
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-    if (brk && con_ready()) {
-      con_read();
-      return 0xFFFFF;//break
-    }
-  }
-  //RAM read
-  j = 0;
-  for (i = 0; i <= 0xFFFF; i++) {
-    if ((i % 8192) == 0) {
-      Serial.print(".");
-    }
-    _AB = i;
-    _RDMEM();
-    if (_DB != pgm_read_byte_near(memtest_table + j)) {
-      if (res>i) {
-        res = i;
-      }
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-        if (brk && con_ready()) {
-          con_read();
-          return 0xFFFFF;//break
-    }
-  }
-  //RAM write (inverse)
-  j = 0;
-  for (i = 0; i <= 0xFFFF ; i++) {
-    _AB = i;
-    _DB = uint8_t(~(pgm_read_byte_near(memtest_table + j)));
-    _WRMEM();
-    if ((i % 8192) == 0) {
-      Serial.print(".");
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-    if (brk && con_ready()) {
-      con_read();
-      return 0xFFFFF;//break
-    }
-  }
-  //RAM read (inverse)
-  j = 0;
-  for (i = 0; i <= 0xFFFF; i++) {
-    if ((i % 8192) == 0) {
-      Serial.print(".");
-    }
-    _AB = i;
-    _RDMEM();
-    if (_DB != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
-      if (res>i) {
-        res = i;
-      }
-    }
-    j++;
-    if (j == MEMTEST_TABLE_SIZE) {
-      j = 0;
-    }
-    if (brk && con_ready()) {
-      con_read();
-      return 0xFFFFF;//break
-    }
-  }
-  return res;
-}
-
+//---------------------------------------------------
+//DEBUG
+uint16_t breakpoint = 0xFFFF;
+boolean breakpointFlag = false;
+char hex[2];
+boolean CPM_logo = true;
 //current state show
 void state() {
   clrlin();
@@ -589,6 +459,100 @@ void state() {
   Serial.println("");
 }
 
+#include "BIOS.h"
+#include "i8080_fns.h"
+
+//memory check
+uint32_t mem_test(boolean brk)
+{
+  uint32_t i;
+  uint16_t j;
+  uint32_t res;
+  res = 0x10000L;
+  //RAM write
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    _AB = i;
+    _DB = pgm_read_byte_near(memtest_table + j);
+    _WRMEM();
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    _AB = i;
+    _RDMEM();
+    if (_DB != pgm_read_byte_near(memtest_table + j)) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+        if (brk && con_ready()) {
+          con_read();
+          return 0xFFFFF;//break
+    }
+  }
+  //RAM write (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF ; i++) {
+    _AB = i;
+    _DB = uint8_t(~(pgm_read_byte_near(memtest_table + j)));
+    _WRMEM();
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    _AB = i;
+    _RDMEM();
+    if (_DB != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  return res;
+}
+
+
 void call(word addr)
 {
   byte cmd;
@@ -624,6 +588,7 @@ void setup() {
   uint8_t res;
   bool RAMTestPass = true;
   uint32_t start_time;
+  int CHECKED_BANKS;
   // start serial port at 9600 bps
   Serial.begin(9600);
   while (!Serial) {
@@ -752,9 +717,11 @@ asm (
     RAM_TEST_MODE = 0x0;//Bank 0 check default
   }
   switch (RAM_TEST_MODE) {
-    case 0: Serial.println(F(">>> BANK 0"));
+    case 0: Serial.println(F(">>> BANK 0"));  
+            CHECKED_BANKS = 1;
             break;
     case 1: Serial.println(F(">>> ALL BANKS"));
+            CHECKED_BANKS = MMU_BANKS_NUM;
             break;
   }
   //MEMORY SPEED TEST
@@ -795,8 +762,20 @@ asm (
   */
   //RAM TEST
   Serial.println(F("RAM TEST..."));
-  RAM_AVAIL = mem_test(false);
-  Serial.println("");  
+  for(int bank=0;bank<CHECKED_BANKS;bank++) {
+    Serial.print(F("BANK "));
+    Serial.print(k, HEX);
+    //bank set for all blocks
+    for (int block=0;block<MMU_BLOCKS_NUM;block++) {
+      bank_set(block,bank);
+    }
+    RAM_AVAIL = mem_test(false);
+    if (RAM_AVAIL != 0x10000) {
+      Serial.println("RAM CHECK ERROR!");
+      while(1) { }
+    }
+    Serial.println("");
+  }
   Serial.print(RAM_AVAIL, DEC);
   Serial.println(F(" BYTE(S) OF RAM ARE AVAILABLE"));
   //RAM clear
@@ -813,7 +792,7 @@ asm (
   //stack init
   _SP = SP_INIT;
   DEBUG = true;//debug on
-  delay(2000);
+  delay(1000);
   clrscr();//clear screen
   xy(MON_Y, 0);//cursor positioning
   Serial.print('>');
@@ -829,12 +808,12 @@ ISR(TIMER1_COMPA_vect) {
   if ( INTR ){ return; }
   INTR = true;
   sei();
-  //LED off
+  //WRITE LED off
   if (LED_on) {
     LED_count--;
     if (LED_count == 0) {
       LED_on = false;
-      fastDigitalWrite(LED_pin, LOW); //LED off
+      fastDigitalWrite(LED_pin, LOW);//LED off
     }
   }
   INTR = false;
@@ -883,7 +862,7 @@ void loop() {
     } while ((inChar != '\r') && (inChar != '\n') && (mon_ptr < MON_BUFFER_SIZE));
     Serial.print('\n');
     mon_ptr = 0;
-    #include "mon.h"
+    #include "mon.h"//monitor command execution
     xy(MON_Y, 0);//cursor positioning
     Serial.print('>');
     clrend();//clear input line to end
