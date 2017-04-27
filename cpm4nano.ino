@@ -48,7 +48,8 @@ const uint8_t RAM_SIZE = 64;//RAM Size for CP/M, KBytes
 const char VER_MAJOR = '0';
 const char VER_MINOR = '3';
 //----------------------------------------------------
-//CPU emulation
+//CPU
+//registers
 volatile uint8_t _W;// W register
 volatile uint8_t _Z;// Z register
 volatile uint8_t _ACT;// ACT register
@@ -61,7 +62,7 @@ volatile uint8_t _DB; //data bus buffer
 volatile uint16_t _AB; //data bus buffer
 bool INTE;
 boolean DEBUG;//debug mode flag
-//SZ000P00
+//SZ000P00  SZP flags lookup table
 const static uint8_t PROGMEM SZP_table[] = {
   B01000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
   B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000,
@@ -81,26 +82,28 @@ const static uint8_t PROGMEM SZP_table[] = {
   B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
 };
 //---------------------------------------------------
-//memory
+//MEMORY
 const static uint8_t PROGMEM memtest_table[] = {
   0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
 };
 const uint16_t MEMTEST_TABLE_SIZE = 33;
-uint8_t RAM_TEST_MODE;
-const uint32_t SD_MEM_OFFSET = 0x070000;
-boolean MEM_ERR = false;
+uint8_t RAM_TEST_MODE;//memory check mpde
+const uint32_t SD_MEM_OFFSET = 0x070000;//memory offset in SD-card
+boolean MEM_ERR = false;//LRC memory error flag
 //----------------------------------------------------
-//cache
-const uint16_t CACHE_LINE_SIZE = 64;
-const uint8_t CACHE_LINES_NUM = 8;
-const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
-uint32_t cache_tag[CACHE_LINES_NUM];
-uint16_t cache_start[CACHE_LINES_NUM];
-boolean cache_dirty[CACHE_LINES_NUM];
-static uint8_t cache[CACHE_SIZE];
-const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;
+//CACHE
+//constants
+const uint16_t CACHE_LINE_SIZE = 64;//cache line size
+const uint8_t CACHE_LINES_NUM = 8;//cache lines number
+const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;//total cache size
+const uint32_t CACHE_LINE_EMPTY = 0xFFFFFFFF;//empty cache line flag
+//arrays
+static uint8_t cache[CACHE_SIZE];//cache
+uint32_t cache_tag[CACHE_LINES_NUM];//cache line tag (block #)
+uint16_t cache_start[CACHE_LINES_NUM];//cache line start
+boolean cache_dirty[CACHE_LINES_NUM];//cache line dirty flag
 //----------------------------------------------------
-//console emulation
+//CONSOLE
 uint8_t CON_IN = 0;
 //0 - terminal program
 //1 - PS/2 keyboard
@@ -112,7 +115,7 @@ const uint8_t SIOA_CON_PORT_DATA = 0x01;//data
 const uint8_t SIO2_CON_PORT_STATUS = 0x10;//status
 const uint8_t SIO2_CON_PORT_DATA = 0x11;//data
 //-----------------------------------------------------
-//FDD emulation
+//FDD
 //FDD controller ports
 const uint8_t FDD_BASE = 0xE0;//FDD base address
 const uint8_t FDD_PORT_CMD = FDD_BASE + 0; //status/command
@@ -132,7 +135,7 @@ uint8_t FDD_REG_DRV = 0; //drive register
 boolean FDD_REG_STATUS = false; //true - O.K., false - ERROR
 uint16_t FDD_REG_DMA = 0; //DMA address register
 //-----------------------------------------------------
-//aux ports
+//AUX
 boolean LED_on = false;
 uint8_t LED_count;
 const uint8_t LED_delay = 3;
@@ -142,27 +145,25 @@ const uint8_t OUT_pin = 7;//D7 pin - OUT
 const uint8_t IN_PORT = 0xF0;//IN port
 const uint8_t OUT_PORT = 0xF1;//OUT port
 //-----------------------------------------------------
-//SD read/write
+//SD
 Sd2Card card;
-const uint8_t SS_SD_pin = 10; //SS pin D10
-const uint16_t SD_BLK_SIZE = 128;
+const uint8_t SS_SD_pin = 10;//SS pin (D10)
+const uint16_t SD_BLK_SIZE = 128;//SD block size
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
+//block read from SD
 uint8_t readSD (uint32_t blk, uint16_t offset) {
   uint8_t res;
   res = card.readBlock(blk, _buffer, offset);
-  //fastDigitalWrite(LED_pin,HIGH);
-  //LEDon = true;
-  //LEDcount = LEDdelay;
   return res;
 }
-
+//block write to SD
 uint8_t writeSD (uint32_t blk) {
   uint8_t res;
   res = card.writeBlock(blk, _buffer);
   if (!LED_on) {
     fastDigitalWrite(LED_pin, HIGH);
-    LED_on = true;
+    LED_on = true;//WRITE LED on
   }
   LED_count = LED_delay;
   return res;
@@ -187,7 +188,7 @@ void writeSPIRAM (uint16_t adr, uint8_t dat) {
 }
 */
 //---------------------------------------------------
-//debug
+//DEBUG
 uint16_t breakpoint = 0xFFFF;
 boolean breakpointFlag = false;
 volatile bool exitFlag = false;
@@ -318,6 +319,7 @@ boolean hexcheck(uint8_t start, uint8_t len) {
   return ok;
 }
 
+//keyboard input to numbers
 uint8_t kbd2nibble(uint8_t start) {
   return chr2hex(mon_buffer[start]);
 }
