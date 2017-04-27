@@ -154,6 +154,13 @@ uint8_t in_port(uint8_t port) {
       //Altair/IMSAI sense switch
       dat = SENSE_SW;
       break;
+    //MMU registers
+    case MMU_BLOCK_SEL_PORT:
+      dat = MMU_BLOCK_SEL_REG;
+      break;
+    case MMU_BANK_SEL_PORT:
+      dat = MMU_MAP[MMU_BLOCK_SEL_REG];
+      break;
     case IN_PORT:
       dat = digitalRead(IN_pin);
       if ((dat && 0x01) == 0x01) {
@@ -246,6 +253,13 @@ void out_port(uint8_t port, uint8_t dat) {
     case FDD_PORT_DMA_ADDR_HI:
       FDD_REG_DMA = FDD_REG_DMA & 0x00FF;
       FDD_REG_DMA = FDD_REG_DMA + dat * 256;
+      break;
+    //MMU registers
+    case MMU_BLOCK_SEL_PORT:
+      MMU_BLOCK_SEL_REG = dat;
+      break;
+    case MMU_BANK_SEL_PORT:
+      MMU_MAP[MMU_BLOCK_SEL_REG] = dat;
       break;
     case OUT_PORT:
       //bit 0 out

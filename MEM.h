@@ -6,8 +6,6 @@
 //address <- _AB
 //data -> _DB
 
-
-
 void _RDMEM() {
   uint32_t blk;
   uint32_t blk_tmp;
@@ -20,13 +18,7 @@ void _RDMEM() {
     _DB = 0xFF;//not memory
     return;
   }
-  //RAM mode set
-  //RAM_MODE = 1;//SPI RAM
-  RAM_MODE = 0;//SD Card
-  //RAM get/set
-  switch (RAM_MODE) {
-    case 0: //SD Card
-        blk = _AB >> CACHE_LINE_POW; 
+        blk = ((uint32_t)(_AB) + (uint32_t)((MMU_MAP[_AB / MMU_BLOCK_SIZE]) * 65536UL)) / CACHE_LINE_SIZE; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -91,14 +83,6 @@ void _RDMEM() {
           }
         }
         _DB = cache[cache_start[sel_blk] + (_AB & (CACHE_LINE_SIZE - 1))];//read from cache
-        break;
-    case 1: //SPI SRAM
-        //_DB = readSPIRAM(_AB);
-        break;
-    case 2: //on-board RAM
-        
-        break;
-  }
 }
 
 //address <- _AB
@@ -114,13 +98,7 @@ void _WRMEM() {
   if (_AB>MEM_MAX) {
     return;
   }
-  //RAM mode set
-  //RAM_MODE = 1;//SPI RAM
-  RAM_MODE = 0;//SD Card
-  //RAM get/set
-  switch (RAM_MODE) {
-    case 0: //SD Card
-        blk = _AB >> CACHE_LINE_POW; 
+        blk = ((uint32_t)(_AB) + (uint32_t)((MMU_MAP[_AB / MMU_BLOCK_SIZE]) * 65536UL)) / CACHE_LINE_SIZE; 
         blk = blk +  SD_MEM_OFFSET;
         sel_blk = 0xff;
         i=0;
@@ -184,14 +162,6 @@ void _WRMEM() {
         }
         cache[cache_start[sel_blk] + (_AB & (CACHE_LINE_SIZE - 1))] = _DB;//cache update
         cache_dirty[sel_blk] = true;
-        break;
-    case 1: //SPI SRAM
-        //writeSPIRAM(_AB,_DB);
-        break;
-    case 2: //on-board RAM
-        //
-        break;
-  }
 }
 
 uint8_t _getMEM(uint16_t adr) {

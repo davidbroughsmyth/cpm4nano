@@ -46,7 +46,7 @@ const uint8_t RAM_SIZE = 64;//RAM Size for CP/M, KBytes
 
 //version
 const char VER_MAJOR = '0';
-const char VER_MINOR = '2';
+const char VER_MINOR = '3';
 //----------------------------------------------------
 //CPU emulation
 volatile uint8_t _W;// W register
@@ -87,13 +87,12 @@ const static uint8_t PROGMEM memtest_table[] = {
   0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
 };
 const uint16_t MEMTEST_TABLE_SIZE = 33;
-uint8_t RAM_MODE;
-const uint32_t SD_MEM_OFFSET = 0x000400;
+uint8_t RAM_TEST_MODE;
+const uint32_t SD_MEM_OFFSET = 0x070000;
 boolean MEM_ERR = false;
 //----------------------------------------------------
 //cache
-const uint8_t CACHE_LINE_POW = 6;//2^6 = 64 bytes
-const uint8_t CACHE_LINE_SIZE = 1 << CACHE_LINE_POW;//128 byte max
+const uint16_t CACHE_LINE_SIZE = 64;
 const uint8_t CACHE_LINES_NUM = 8;
 const uint16_t CACHE_SIZE = CACHE_LINES_NUM * CACHE_LINE_SIZE;
 uint32_t cache_tag[CACHE_LINES_NUM];
@@ -320,6 +319,10 @@ boolean hexcheck(uint8_t start, uint8_t len) {
   return ok;
 }
 
+uint8_t kbd2nibble(uint8_t start) {
+  return chr2hex(mon_buffer[start]);
+}
+
 uint8_t kbd2byte(uint8_t start) {
   return chr2hex(mon_buffer[start]) * 16 + chr2hex(mon_buffer[start + 1]);
 }
@@ -373,7 +376,18 @@ void EEPROM_init() {
 //ALTAIR
 uint8_t SENSE_SW = 0x00;//Altair/IMSAI sense switch default off
 const uint8_t SENSE_SW_PORT = 0xFF;//Altair/IMSAI sense switch port
-
+//------------------------------------------------------
+//MMU
+//ports
+const uint8_t MMU_BLOCK_SEL_PORT = 0xD0;
+const uint8_t MMU_BANK_SEL_PORT = 0xD1;
+//address/data registers
+const uint8_t BANKS_NUM = 8;//banks number
+const uint16_t MMU_BLOCK_SIZE = 4096;//2^12 = 4096 bytes - block size 
+const uint8_t MMU_BLOCKS_NUM = 65536UL / MMU_BLOCK_SIZE;
+uint8_t MMU_MAP[MMU_BLOCKS_NUM];//memory banking map
+uint8_t MMU_BLOCK_SEL_REG = 0x00;//block select register
+uint8_t MMU_BANK_SEL_REG = 0x00;//bank register (default - BANK 0)
 
 #include "MEM.h"
 #include "i8080_exec.h"
@@ -471,6 +485,95 @@ uint32_t mem_test(boolean brk)
   return res;
 }
 
+//current state show
+void state() {
+  clrlin();
+  Serial.print("A:");
+  sprintf(hex, "%02X", _Regs[_Reg_A]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("B:");
+  sprintf(hex, "%02X", _Regs[_Reg_B]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("C:");
+  sprintf(hex, "%02X", _Regs[_Reg_C]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("D:");
+  sprintf(hex, "%02X", _Regs[_Reg_D]);
+  Serial.print(hex);
+  Serial.println("   ");
+  clrlin();
+  Serial.print("E:");
+  sprintf(hex, "%02X", _Regs[_Reg_E]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("H:");
+  sprintf(hex, "%02X", _Regs[_Reg_H]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("L:");
+  sprintf(hex, "%02X", _Regs[_Reg_L]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("F: ");
+  if (_getFlags_S()==1) {
+    Serial.print("S");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_Z()==1) {
+    Serial.print("Z");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_A()==1) {
+    Serial.print("A");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_P()==1) {
+    Serial.print("P");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_C()==1) {
+    Serial.print("C");
+  }
+  else {
+    Serial.print(" ");
+  }
+  Serial.println("   ");
+  clrlin();
+  Serial.print(F("PC:"));
+  sprintf(hex, "%02X", highByte(_PC));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_PC));
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print(F("SP:"));
+  sprintf(hex, "%02X", highByte(_SP));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_SP));
+  Serial.println(hex);
+  clrlin();
+  Serial.print(F("CMD: "));
+  sprintf(hex, "%02X", _IR);
+  Serial.print(hex);
+  Serial.println("");
+  //MMU map
+  clrlin();
+  Serial.print(F("MMU: "));
+  for(int i=0;i<MMU_BLOCKS_NUM;i++) {
+    Serial.print(MMU_MAP[i],DEC);
+  }
+  Serial.println("");
+}
 
 void call(word addr)
 {
@@ -569,31 +672,11 @@ asm (
   SENSE_SW = EEPROM.read(EEPROM_SENSE_SW);
   //flush serial buffer
   con_flush();
-  //select memory type
-  Serial.println("SELECT MEMORY TYPE: ");
-  Serial.println("[0] - SD CARD, [1] - SPI SRAM");
-  RAM_MODE = 0xFF;
-  start_time = millis();
-  do {
-    if (con_ready()) {
-      inChar = con_read();
-      switch (inChar) {
-        case '0': RAM_MODE = 0;
-          break;
-        case '1': RAM_MODE = 1;
-          break;
-      }
-    }
-  } while ((RAM_MODE == 0xFF) && ((millis() - start_time) < SET_PAUSE));
-  if (RAM_MODE == 0xFF) {
-    RAM_MODE = 0x00; //SD CARD by default
+  //MMU init
+  for (i = 0; i < MMU_BLOCKS_NUM; i++) {
+    MMU_MAP[i] = 0;
   }
-  switch (RAM_MODE) {
-    case 0: Serial.println(">>> SD CARD");
-      break;
-    case 1: Serial.println(">>> SPI SRAM");
-      break;
-  }
+  MMU_BLOCK_SEL_REG = 0;
   //cache init
   for (i = 0; i < CACHE_LINES_NUM; i++) {
     cache_tag[i] = 0xFFFFFFFF;
@@ -635,6 +718,23 @@ asm (
     res = writeSD(blk);
     blk++;
   } while (blk < blk_end);
+
+  Serial.println("SELECT BANK(S) FOR TEST: ");
+  Serial.println("[0] - BANK 0, [1] - ALL BANKS");
+  RAM_TEST_MODE = 0xFF;
+  start_time = millis();
+  do {
+    if (con_ready()) {
+      inChar = con_read();
+      switch (inChar) {
+        case '0': RAM_TEST_MODE = 0;
+          break;
+        case '1': RAM_TEST_MODE = 1;
+          break;
+      }
+    }
+  } while ((RAM_TEST_MODE == 0xFF) && ((millis() - start_time) < SET_PAUSE));
+  
   //MEMORY SPEED TEST
   /*
   uint32_t xxlen;

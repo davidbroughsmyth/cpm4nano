@@ -7,6 +7,8 @@
 //TO DO
 //command length check
 
+//LDOIFTBWQGSXCRMEZKYV
+
     clrarea();//clear work area
     
     //LXXXXYY - load byte to memory
@@ -302,7 +304,7 @@
       }
     }
 
-    //M - Debug Mode on/off
+    //W - Debug Mode on/off
     if (mon_buffer[0]=='W') {
       DEBUG = !DEBUG;
       if (DEBUG) {
@@ -426,7 +428,7 @@
       sys_reset();
     }
 
-    //M - Memory  tesr
+    //M - Memory  test
     if (mon_buffer[0]=='M') {
       uint32_t pass_cnt=0;
       boolean go=true;
@@ -460,7 +462,7 @@
      goto MON_END;
     }
 
-    //EEPROM settings reset
+    //E - EEPROM settings reset
     if (mon_buffer[0]=='E') {
        EEPROM_init();
        Serial.println(F("O.K."));
@@ -548,6 +550,35 @@
       else {
         goto MON_INVALID;
       }
+    }
+
+    //Yxy - switch block x to bank y
+    if (mon_buffer[0]=='Y') {
+      if (hexcheck(1,2)) {
+        if (kbd2nibble(2)<BANKS_NUM) {
+          MMU_MAP[kbd2nibble(1)] = kbd2nibble(2);
+          Serial.print(F("BLOCK "));
+          Serial.print(kbd2nibble(1), HEX);
+          Serial.print(F(":BANK "));
+          Serial.print(kbd2nibble(2), HEX);
+        }
+        else {
+          Serial.println(F("BANK NOT EXIST!"));
+        }
+        goto MON_END;
+      }
+      else {
+        goto MON_INVALID;
+      }
+    }
+
+    //V - current state
+    if (mon_buffer[0]=='V') {
+      savecur();
+      xy(0,0);
+      state();
+      loadcur();
+      goto MON_END;
     }
 
 MON_INVALID:
