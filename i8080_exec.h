@@ -159,7 +159,7 @@ uint8_t in_port(uint8_t port) {
       dat = MMU_BLOCK_SEL_REG;
       break;
     case MMU_BANK_SEL_PORT:
-      dat = MMU_MAP[MMU_BLOCK_SEL_REG];
+      dat = bank_get(MMU_BLOCK_SEL_REG);
       break;
     case IN_PORT:
       dat = digitalRead(IN_pin);
@@ -259,7 +259,7 @@ void out_port(uint8_t port, uint8_t dat) {
       MMU_BLOCK_SEL_REG = dat;
       break;
     case MMU_BANK_SEL_PORT:
-      MMU_MAP[MMU_BLOCK_SEL_REG] = dat;
+      bank_set(MMU_BLOCK_SEL_REG,dat);
       break;
     case OUT_PORT:
       //bit 0 out

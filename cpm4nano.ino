@@ -80,7 +80,6 @@ const static uint8_t PROGMEM SZP_table[] = {
   B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
   B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
 };
-boolean Z80 = false;//Z80 emulation
 //---------------------------------------------------
 //memory
 const static uint8_t PROGMEM memtest_table[] = {
@@ -379,15 +378,28 @@ const uint8_t SENSE_SW_PORT = 0xFF;//Altair/IMSAI sense switch port
 //------------------------------------------------------
 //MMU
 //ports
-const uint8_t MMU_BLOCK_SEL_PORT = 0xD0;
-const uint8_t MMU_BANK_SEL_PORT = 0xD1;
-//address/data registers
-const uint8_t BANKS_NUM = 8;//banks number
-const uint16_t MMU_BLOCK_SIZE = 4096;//2^12 = 4096 bytes - block size 
-const uint8_t MMU_BLOCKS_NUM = 65536UL / MMU_BLOCK_SIZE;
-uint8_t MMU_MAP[MMU_BLOCKS_NUM];//memory banking map
+const uint8_t MMU_BLOCK_SEL_PORT = 0xD0;//block select port
+const uint8_t MMU_BANK_SEL_PORT = 0xD1;//bank select port
+//registers
 uint8_t MMU_BLOCK_SEL_REG = 0x00;//block select register
-uint8_t MMU_BANK_SEL_REG = 0x00;//bank register (default - BANK 0)
+uint8_t MMU_BANK_SEL_REG = 0x00;//bank register
+//constants
+const uint8_t BANKS_NUM = 8;//banks number
+const uint16_t MMU_BLOCK_SIZE = 4096;//4096 bytes - block size 
+const uint8_t MMU_BLOCKS_NUM = 65536UL / MMU_BLOCK_SIZE;//blocks number
+//map
+uint8_t MMU_MAP[MMU_BLOCKS_NUM];//memory banking map
+//set bank for block
+void bank_set(uint8_t block, uint8_t bank)
+{
+  MMU_MAP[block] = bank;
+}
+//get bank for block
+uint8_t bank_get(uint8_t block)
+{
+  return MMU_MAP[block];
+}
+//----------------------------------------------------------------
 
 #include "MEM.h"
 #include "i8080_exec.h"
@@ -598,7 +610,7 @@ void call(word addr)
     MEM_ERR = false;
     clrscr();
     Serial.println("");
-    Serial.println("Memory Error!!!");
+    Serial.println(F("MEMORY ERROR!"));
   }
 }
 
@@ -719,8 +731,8 @@ asm (
     blk++;
   } while (blk < blk_end);
 
-  Serial.println("SELECT BANK(S) FOR TEST: ");
-  Serial.println("[0] - BANK 0, [1] - ALL BANKS");
+  Serial.println(F("SELECT BANK(S) FOR TEST: "));
+  Serial.println(F("[0] - BANK 0, [1] - ALL BANKS"));
   RAM_TEST_MODE = 0xFF;
   start_time = millis();
   do {
@@ -734,7 +746,15 @@ asm (
       }
     }
   } while ((RAM_TEST_MODE == 0xFF) && ((millis() - start_time) < SET_PAUSE));
-  
+  if (RAM_TEST_MODE == 0xFF) {
+    RAM_TEST_MODE = 0x0;//Bank 0 check default
+  }
+  switch (RAM_TEST_MODE) {
+    case 0: Serial.println(F(">>> BANK 0"));
+            break;
+    case 1: Serial.println(F(">>> ALL BANKS"));
+            break;
+  }
   //MEMORY SPEED TEST
   /*
   uint32_t xxlen;
