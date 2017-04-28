@@ -4,17 +4,13 @@
 *   Website:  https://acdc.foxylab.com
 */
 
-//TO DO
-//4 fdd
-
 //I/O devices flag
 const uint8_t ACK = 0x06;
 const uint16_t CPM_LBL_START = 0x18;
 const uint16_t CPM_LBL_LEN = 36;
 const uint16_t CPM_SERIAL_START = 0x328;
 const uint16_t CPM_SERIAL_LEN = 6;
-
-uint32_t blk;
+boolean CPM_logo = true;
 
 void _charOut(uint8_t c) {
     out_port(SIOA_CON_PORT_DATA, c);
@@ -49,6 +45,7 @@ boolean _IPL() {
   uint8_t res;
   uint8_t d8;
   boolean success = false;
+  char hex[2];
   if (CPM_logo) {
   Serial.print(RAM_SIZE, DEC);
   Serial.println("K SYSTEM");

@@ -4,8 +4,17 @@
 *   Website:  https://acdc.foxylab.com
 */
 
+extern boolean con_ready();
+extern char con_read();
+
 const uint32_t SD_MEM_OFFSET = 0x070000;//memory offset in SD-card
 boolean MEM_ERR = false;//LRC memory error flag
+
+const static uint8_t PROGMEM memtest_table[] = {
+  0x3D, 0x55, 0x5F, 0x15, 0x23, 0x47, 0x1C, 0x31, 0x48, 0x60, 0x35, 0x11, 0x4F, 0x2F, 0x2E, 0x14, 0x20, 0x5B, 0x39, 0x26, 0x09, 0x61, 0x34, 0x30, 0x50, 0x2B, 0x4B, 0x0F, 0x63, 0x1F, 0x10, 0x1E, 0x36,
+};
+const uint16_t MEMTEST_TABLE_SIZE = 33;
+uint8_t RAM_TEST_MODE;//memory check mpde
 
 //CACHE
 //constants
@@ -216,4 +225,92 @@ void _setMEM(uint16_t adr, uint8_t dat) {
   _WRMEM();
 }
 
-
+//MEMORY TEST
+uint32_t mem_test(boolean brk)
+{
+  uint32_t i;
+  uint16_t j;
+  uint32_t res;
+  res = 0x10000L;
+  //RAM write
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    _AB = i;
+    _DB = pgm_read_byte_near(memtest_table + j);
+    _WRMEM();
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    _AB = i;
+    _RDMEM();
+    if (_DB != pgm_read_byte_near(memtest_table + j)) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+        if (brk && con_ready()) {
+          con_read();
+          return 0xFFFFF;//break
+    }
+  }
+  //RAM write (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF ; i++) {
+    _AB = i;
+    _DB = uint8_t(~(pgm_read_byte_near(memtest_table + j)));
+    _WRMEM();
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  //RAM read (inverse)
+  j = 0;
+  for (i = 0; i <= 0xFFFF; i++) {
+    if ((i % 8192) == 0) {
+      Serial.print(".");
+    }
+    _AB = i;
+    _RDMEM();
+    if (_DB != uint8_t(~(pgm_read_byte_near(memtest_table + j)))) {
+      if (res>i) {
+        res = i;
+      }
+    }
+    j++;
+    if (j == MEMTEST_TABLE_SIZE) {
+      j = 0;
+    }
+    if (brk && con_ready()) {
+      con_read();
+      return 0xFFFFF;//break
+    }
+  }
+  return res;
+}

@@ -7,6 +7,20 @@
 //TO DO
 //INR  DCR - AC
 
+extern uint8_t _getMEM(uint16_t adr);
+extern void _setMEM(uint16_t adr, uint8_t dat);
+extern boolean con_ready();
+extern char con_read();
+
+//registers
+volatile uint8_t _W;// W register
+volatile uint8_t _Z;// Z register
+volatile uint8_t _ACT;// ACT register
+volatile uint8_t _TMP;// TMP register
+volatile uint8_t _ALU;// ALU
+volatile uint16_t _PC; //program counter
+volatile uint16_t _SP; //stack pointer
+volatile uint8_t _IR; //instruction register
 
 #define _Reg_B B000
 #define _Reg_C B001
@@ -68,6 +82,31 @@ uint8_t ZP_RESET = B10111011;
 
 #define _FLAGS(b) _rF = (_rF & SZP_RESET) | pgm_read_byte_near(SZP_table + b);
 
+//SZ000P00  SZP flags lookup table
+const static uint8_t PROGMEM SZP_table[] = {
+  B01000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
+  B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000,
+  B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000,
+  B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
+  B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000,
+  B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
+  B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100,
+  B00000000, B00000100, B00000100, B00000000, B00000100, B00000000, B00000000, B00000100, B00000100, B00000000, B00000000, B00000100, B00000000, B00000100, B00000100, B00000000,
+  B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
+  B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
+  B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
+  B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
+  B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
+  B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
+  B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000,
+  B10000100, B10000000, B10000000, B10000100, B10000000, B10000100, B10000100, B10000000, B10000000, B10000100, B10000100, B10000000, B10000100, B10000000, B10000000, B10000100,
+};
+
+uint16_t breakpoint = 0xFFFF;
+boolean breakpointFlag = false;
+bool INTE;
+boolean DEBUG;//debug mode flag
+
 uint16_t pc2a16() {
   uint16_t a16;
   _PC++;
@@ -82,6 +121,96 @@ void pc2sp() {
   _SP--;
   _setMEM(_SP, lowByte(_PC));
   _setMEM(_SP + 1, highByte(_PC));
+}
+
+void state() {
+  char hex[2];
+  clrlin();
+  Serial.print("A:");
+  sprintf(hex, "%02X", _Regs[_Reg_A]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("B:");
+  sprintf(hex, "%02X", _Regs[_Reg_B]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("C:");
+  sprintf(hex, "%02X", _Regs[_Reg_C]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("D:");
+  sprintf(hex, "%02X", _Regs[_Reg_D]);
+  Serial.print(hex);
+  Serial.println("   ");
+  clrlin();
+  Serial.print("E:");
+  sprintf(hex, "%02X", _Regs[_Reg_E]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("H:");
+  sprintf(hex, "%02X", _Regs[_Reg_H]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("L:");
+  sprintf(hex, "%02X", _Regs[_Reg_L]);
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print("F: ");
+  if (_getFlags_S()==1) {
+    Serial.print("S");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_Z()==1) {
+    Serial.print("Z");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_A()==1) {
+    Serial.print("A");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_P()==1) {
+    Serial.print("P");
+  }
+  else {
+    Serial.print(" ");
+  }
+  if (_getFlags_C()==1) {
+    Serial.print("C");
+  }
+  else {
+    Serial.print(" ");
+  }
+  Serial.println("   ");
+  clrlin();
+  Serial.print(F("PC:"));
+  sprintf(hex, "%02X", highByte(_PC));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_PC));
+  Serial.print(hex);
+  Serial.print("   ");
+  Serial.print(F("SP:"));
+  sprintf(hex, "%02X", highByte(_SP));
+  Serial.print(hex);
+  sprintf(hex, "%02X", lowByte(_SP));
+  Serial.println(hex);
+  clrlin();
+  Serial.print(F("CMD: "));
+  sprintf(hex, "%02X", _IR);
+  Serial.print(hex);
+  Serial.println("");
+  //MMU map
+  clrlin();
+  Serial.print(F("MMU: "));
+  for(int i=0;i<MMU_BLOCKS_NUM;i++) {
+    Serial.print(MMU_MAP[i],DEC);
+  }
+  Serial.println("");
 }
 
 uint8_t in_port(uint8_t port) {
