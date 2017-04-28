@@ -1,11 +1,30 @@
-//-----------------------------------------------------
-//keyboard monitor procedures
+/*  CPM4NANO - i8080 & CP/M emulator for Arduino Nano 3.0 
+*   Copyright (C) 2017 - Alexey V. Voronin @ FoxyLab 
+*   Email:    support@foxylab.com
+*   Website:  https://acdc.foxylab.com
+*/
+
+//console mode
+uint8_t CON_IN = 0;
+//0 - terminal program
+//1 - PS/2 keyboard
+
+//console ports
+//SIO-A//SSM
+const uint8_t SIOA_CON_PORT_STATUS = 0x00;//status
+const uint8_t SIOA_CON_PORT_DATA = 0x01;//data
+//SIO-2
+const uint8_t SIO2_CON_PORT_STATUS = 0x10;//status
+const uint8_t SIO2_CON_PORT_DATA = 0x11;//data
+
+//monitor input procedures
 char inChar;
 const int MON_BUFFER_SIZE = 32;//monitor input buffer size
 char mon_buffer[MON_BUFFER_SIZE + 1];
 int mon_ptr = 0;
 const uint32_t SET_PAUSE = 5000;//pause (msecs)
 boolean MON = true;
+
 //keys codes
 const uint8_t BS_KEY = 0x08;
 const uint8_t DEL_KEY = 0x7F;
@@ -15,6 +34,7 @@ const uint8_t CTRL_Z_KEY = 0x1A;
 const uint8_t CTRL_O_KEY = 0x0F;
 const uint8_t CTRL_X_KEY = 0x18;
 const uint8_t CTRL_SLASH_KEY = 0x1F;
+
 //console input variables
 const uint8_t KBD_BUFFER_SIZE = 16;//console input buffer size
 volatile char kbd_buffer[KBD_BUFFER_SIZE];//console input buffer

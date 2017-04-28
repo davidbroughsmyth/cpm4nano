@@ -1,8 +1,14 @@
+/*  CPM4NANO - i8080 & CP/M emulator for Arduino Nano 3.0 
+*   Copyright (C) 2017 - Alexey V. Voronin @ FoxyLab 
+*   Email:    support@foxylab.com
+*   Website:  https://acdc.foxylab.com
+*/
 
-//SD
 Sd2Card card;
 const uint8_t SS_SD_pin = 10;//SS pin (D10)
 const uint16_t SD_BLK_SIZE = 128;//SD block size
+
+//SD buffers
 static unsigned char _buffer[SD_BLK_SIZE];
 static unsigned char _dsk_buffer[SD_BLK_SIZE];
 
