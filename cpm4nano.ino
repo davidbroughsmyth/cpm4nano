@@ -51,9 +51,13 @@ const char VER_MINOR = '3';
 
 #include "MEM.h"
 
-#include "i8080_exec.h"
+#include "FDD.h"
 
-#include "console.h"
+#include "CONIO.h"
+
+#include "IO.h"
+
+#include "i8080_exec.h"
 
 //-----------------------------------------------------
 //EEPRPOM

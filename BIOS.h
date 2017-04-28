@@ -13,7 +13,7 @@ const uint16_t CPM_SERIAL_LEN = 6;
 boolean CPM_logo = true;
 
 void _charOut(uint8_t c) {
-    out_port(SIOA_CON_PORT_DATA, c);
+    _setPORT(SIOA_CON_PORT_DATA, c);
 }
 
 void _BIOS_RET() {
@@ -81,7 +81,7 @@ boolean _IPL() {
           _WRMEM();
         }   
       }  
-      if (CPM_logo) { out_port(SIOA_CON_PORT_DATA, '.'); }
+      if (CPM_logo) { _setPORT(SIOA_CON_PORT_DATA, '.'); }
   }
   
   //checksum checking

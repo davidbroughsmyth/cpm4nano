@@ -45,7 +45,7 @@
       if (hexcheck(1,4)) {
         port = kbd2byte(1);
         dat = kbd2byte(3);
-        out_port(port, dat);
+        _setPORT(port, dat);
         Serial.println("O.K.");
         goto MON_END;
       }
@@ -58,7 +58,7 @@
     if (mon_buffer[0]=='I') {
         if (hexcheck(1,2)) {
           port = kbd2byte(1);
-          dat = in_port(port);
+          dat = _getPORT(port);
           Serial.println(dat, HEX);
           Serial.println(F("O.K."));
           goto MON_END;
