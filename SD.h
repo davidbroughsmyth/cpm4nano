@@ -30,3 +30,11 @@ uint8_t writeSD (uint32_t blk) {
   LED_count = LED_delay;
   return res;
 }
+
+//erase SD
+uint8_t eraseSD (uint32_t blk, uint32_t len) {
+  uint8_t res;
+  res = card.erase(blk, blk+len-1);
+  return res;
+}
+

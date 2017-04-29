@@ -163,7 +163,6 @@ void Sd2Card::chipSelectLow(void) {
  * \return The value one, true, is returned for success and
  * the value zero, false, is returned for failure.
  */
-/*
 uint8_t Sd2Card::erase(uint32_t firstBlock, uint32_t lastBlock) {
   if (!eraseSingleBlockEnable()) {
     error(SD_CARD_ERROR_ERASE_SINGLE_BLOCK);
@@ -190,7 +189,6 @@ uint8_t Sd2Card::erase(uint32_t firstBlock, uint32_t lastBlock) {
   chipSelectHigh();
   return false;
 }
-*/
 //------------------------------------------------------------------------------
 /** Determine if card supports single block erase.
  *

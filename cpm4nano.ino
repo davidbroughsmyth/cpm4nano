@@ -125,6 +125,9 @@ void call(word addr)
   }
 }
 
+//reset function
+void(* sys_reset) (void) = 0;
+
 void setup() {
   uint32_t i;
   uint16_t j;
@@ -132,8 +135,13 @@ void setup() {
   uint32_t _cardsize;
   uint8_t res;
   bool RAMTestPass = true;
+  uint8_t LRC;
+  uint32_t blk;
+  uint32_t blk_end;
   uint32_t start_time;
-  int CHECKED_BANKS;
+  uint8_t bank;
+  uint8_t block;
+  uint8_t CHECKED_BANKS;
   // start serial port at 9600 bps
   Serial.begin(9600);
   while (!Serial) {
@@ -212,11 +220,13 @@ asm (
     cache_start[i] = i * CACHE_LINE_SIZE;
   }
   //SD card init
+  Serial.print(F("SD CARD INIT..."));
   do {
     card.init(SPI_FULL_SPEED, SS_SD_pin);
     _cardsize = card.cardSize();
     if (_cardsize != 0) {
-      Serial.println(F("CARD SIZE: "));
+      Serial.println(F("O.K."));
+      Serial.print(F("CARD SIZE: "));
       Serial.print(_cardsize);
       Serial.println(F(" SECTORS"));
     }
@@ -226,12 +236,19 @@ asm (
   } while (_cardsize == 0);
 
   //SD RAM AREA CLEARING
-  Serial.println(F("SD RAM AREA CLEARING..."));
-  uint8_t LRC;
-  uint32_t blk;
-  uint32_t blk_end;
+  Serial.print(F("SD RAM AREA ERASING..."));
+  if (eraseSD(SD_MEM_OFFSET,65536UL/CACHE_LINE_SIZE*MMU_BANKS_NUM) == false) {
+    Serial.println(F("ERROR!"));
+    while(1);
+  }
+  else
+  {
+    Serial.println(F("O.K."));
+  }
+  Serial.print(F("SD RAM AREA INIT"));
   blk = SD_MEM_OFFSET;
-  blk_end = blk + ( MEM_SIZE*1024U / CACHE_LINE_SIZE ) + 2;
+  blk_end = blk + (65536UL/CACHE_LINE_SIZE) * MMU_BANKS_NUM;
+  i = 0;
   do {
     LRC = 0;//LRC reset
     for(j=0;j<CACHE_LINE_SIZE;j++) {
@@ -241,8 +258,12 @@ asm (
     _buffer[CACHE_LINE_SIZE] = LRC;//LRC add
     res = writeSD(blk);
     blk++;
+    if ((i % ((65536UL/CACHE_LINE_SIZE))) == 0) {
+      Serial.print(".");
+    }
+    i++;
   } while (blk < blk_end);
-
+  Serial.println(F("O.K."));
   Serial.println(F("SELECT BANK(S) FOR TEST: "));
   Serial.println(F("[0] - BANK 0, [1] - ALL BANKS"));
   RAM_TEST_MODE = 0xFF;
@@ -261,11 +282,12 @@ asm (
   if (RAM_TEST_MODE == 0xFF) {
     RAM_TEST_MODE = 0x0;//Bank 0 check default
   }
+  Serial.print(F("RAM TEST..."));
   switch (RAM_TEST_MODE) {
-    case 0: Serial.println(F(">>> BANK 0"));  
+    case 0: Serial.println(F("BANK 0"));  
             CHECKED_BANKS = 1;
             break;
-    case 1: Serial.println(F(">>> ALL BANKS"));
+    case 1: Serial.println(F("ALL BANKS"));
             CHECKED_BANKS = MMU_BANKS_NUM;
             break;
   }
@@ -306,33 +328,32 @@ asm (
   Serial.println(xxlen);//reads number
   */
   //RAM TEST
-  Serial.println(F("RAM TEST..."));
-  for(int bank=0;bank<CHECKED_BANKS;bank++) {
+  for(bank=0;bank<CHECKED_BANKS;bank++) {
     Serial.print(F("BANK "));
-    Serial.print(k, HEX);
+    Serial.print(bank, HEX);
     //bank set for all blocks
-    for (int block=0;block<MMU_BLOCKS_NUM;block++) {
+    for (block=0;block<MMU_BLOCKS_NUM;block++) {
       bank_set(block,bank);
     }
     RAM_AVAIL = mem_test(false);
+    Serial.print(RAM_AVAIL/1024, DEC);
+    Serial.print("K");
     if (RAM_AVAIL != 0x10000) {
+      Serial.println("");
       Serial.println("RAM CHECK ERROR!");
-      while(1) { }
+      delay(3000);
+      sys_reset();
     }
     Serial.println("");
   }
-  Serial.print(RAM_AVAIL, DEC);
-  Serial.println(F(" BYTE(S) OF RAM ARE AVAILABLE"));
-  //RAM clear
-  Serial.println(F("RAM CLEARING..."));
-  for (i = 0; i < RAM_AVAIL; i++) {
-    _AB = i;
-    _DB = 0;
-    _WRMEM();
-    if ((i % 2048) == 0) {
-      Serial.print("#");
-    }
+  //BANK 0 ACTIVE
+  for (block=0;block<MMU_BLOCKS_NUM;block++) {
+      bank_set(block,0);
   }
+  Serial.print(RAM_AVAIL, DEC);
+  Serial.print(" X ");
+  Serial.print(MMU_BANKS_NUM, DEC);
+  Serial.println(F(" BYTE(S) OF RAM ARE AVAILABLE"));
   color(9);
   //stack init
   _SP = SP_INIT;
@@ -342,9 +363,6 @@ asm (
   xy(MON_Y, 0);//cursor positioning
   Serial.print('>');
 }
-
-//reset function
-void(* sys_reset) (void) = 0;
 
 #include "TMR.h"
 

@@ -19,5 +19,4 @@ ISR(TIMER1_COMPA_vect) {
       fastDigitalWrite(LED_pin, LOW);//LED off
     }
   }
-  INTR = false;
 }

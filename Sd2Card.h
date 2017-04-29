@@ -154,7 +154,7 @@ class Sd2Card {
   /** Construct an instance of Sd2Card. */
   Sd2Card(void) : errorCode_(0), inBlock_(0), partialBlockRead_(0), type_(0) {}
   uint32_t cardSize(void);
-  //uint8_t erase(uint32_t firstBlock, uint32_t lastBlock);
+  uint8_t erase(uint32_t firstBlock, uint32_t lastBlock);
   uint8_t eraseSingleBlockEnable(void);
   /**
    * \return error code for last error. See Sd2Card.h for a list of error codes.

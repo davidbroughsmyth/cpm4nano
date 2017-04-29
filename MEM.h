@@ -69,6 +69,7 @@ void _RDMEM() {
   }
         blk = ((uint32_t)(_AB) + (uint32_t)((MMU_MAP[_AB / MMU_BLOCK_SIZE]) * 65536UL)) / CACHE_LINE_SIZE; 
         blk = blk +  SD_MEM_OFFSET;
+        //Serial.println(blk, HEX);
         sel_blk = 0xff;
         i=0;
         do {
