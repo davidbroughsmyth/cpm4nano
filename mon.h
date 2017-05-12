@@ -445,18 +445,19 @@
           go = false;//break
         }
         else {
-          if (RAM_AVAIL>temp) {
-            pass_cnt++;
-            RAM_AVAIL = temp;
-          }
-          pass_cnt++;
-          Serial.println("");
-          clrlin();
-          Serial.print(F("PASS "));
-          Serial.print(pass_cnt, DEC);
-          Serial.print(F(" RAM: "));
-          Serial.print(RAM_AVAIL, DEC);
-          Serial.print(F(" BYTE(S)"));
+                pass_cnt++;
+                Serial.println("");
+                clrlin();
+                Serial.print(F("PASS "));
+                Serial.print(pass_cnt, DEC);
+                //Serial.print(temp, DEC);
+                if (temp == 65536L) {
+                  Serial.print(F(" O.K."));
+                }
+                else {
+                  Serial.print(F(" FAIL!")); 
+                  go = false;//break           
+                }
         }
       } while (go);
      goto MON_END;

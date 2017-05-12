@@ -34,6 +34,7 @@
 #include "Sd2Card.h"
 #include "PS2Keyboard.h"
 #include "EEPROM.h"
+//#include "Wire.h"
 
 //version
 const char VER_MAJOR = '0';
